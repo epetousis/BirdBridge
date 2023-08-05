@@ -459,10 +459,14 @@ app.get('/api/v2/search', async (req, res) => {
         if (match && match[1] === CONFIG.root) {
             const params = buildParams(true);
             params.id = match[3];
-            const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/statuses/show.json', params);
-            const tweet = await twreq.json();
-            res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet)]});
-            return;
+            const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${params.id}.json`, params);
+            const conversation = await twreq.json();
+            const tweet = conversation.globalObjects.tweets[params.id];
+            if (!conversation.errors) {
+                res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet, conversation.globalObjects)]});
+            } else {
+                console.error(`Something went wrong while trying to retrieve tweet with ID ${params.id}:`, tweet.errors);
+            }
         }
     }
 
