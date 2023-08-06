@@ -469,7 +469,7 @@ app.get('/api/v2/search', async (req, res) => {
             if (!conversation.errors) {
                 res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet, conversation.globalObjects)]});
             } else {
-                console.error(`Something went wrong while trying to retrieve tweet with ID ${params.id}:`, tweet.errors);
+                res.status(twreq.status).send({error: JSON.stringify(conversation.errors)});
             }
         }
     } else if (req.body.type === 'statuses') {
