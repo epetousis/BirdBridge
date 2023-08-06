@@ -471,9 +471,42 @@ app.get('/api/v2/search', async (req, res) => {
                 console.error(`Something went wrong while trying to retrieve tweet with ID ${params.id}:`, tweet.errors);
             }
         }
+    } else if (req.body.type === 'statuses') {
+        const params = buildParams(true);
+        injectPagingInfo(req.body, params);
+        // Don't let the client try and fetch more than 100 tweets at once.
+        const safeCount = Math.min(100, parseInt(req.body.limit as string));
+        params.count = safeCount.toString();
+        params.q = req.body.q;
+        params.result_type = 'recent';
+        const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/search/tweets.json', params);
+        let tweets;
+        tweets = await twreq.json();
+        tweets = tweets.statuses;
+        const toots = tweets.map(tweetToToot);
+        addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
+        res.send({accounts: [], hashtags: [], statuses: toots});
+        return;
     }
 
     res.sendStatus(404);
+});
+
+app.get('/api/v1/timelines/tag/*', async (req, res) => {
+    const params = buildParams(true);
+    injectPagingInfo(req.body, params);
+    // Don't let the client try and fetch more than 100 tweets at once.
+    const safeCount = Math.min(100, parseInt(req.body.limit as string));
+    params.count = safeCount.toString();
+    params.q = '#'+req.params[0];
+    params.result_type = 'recent';
+    const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/search/tweets.json', params);
+    let tweets;
+    tweets = await twreq.json();
+    tweets = tweets.statuses;
+    const toots = tweets.map(tweetToToot);
+    addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
+    res.send(toots);
 });
 
 app.post('/api/v1/statuses', async (req, res) => {
