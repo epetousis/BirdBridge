@@ -401,12 +401,13 @@ app.get('/api/v1/accounts/relationships', async (req, res) => {
 app.get('/api/v1/statuses/:id(\\d+)', async (req, res) => {
     const params = buildParams(true);
     params.id = req.params.id;
-    const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/statuses/show.json', params);
-    const tweet = await twreq.json();
+    const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${params.id}.json`, params);
+    const conversation = await twreq.json();
+    const tweet = conversation.globalObjects.tweets[params.id];
     if (twreq.status === 200) {
-        res.send(tweetToToot(tweet));
+        res.send(tweetToToot(tweet, conversation.globalObjects));
     } else {
-        res.status(twreq.status).send({error: JSON.stringify(tweet)});
+        res.status(twreq.status).send({error: JSON.stringify(conversation.errors)});
     }
 });
 
