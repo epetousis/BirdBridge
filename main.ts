@@ -420,10 +420,13 @@ app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const ancestors = [];
     const descendants = [];
 
+    const requestedStatus = conversation.globalObjects.tweets[req.params.id];
+
     for (const obj of Object.values(conversation.globalObjects.tweets)) {
         const tweet = obj as Record<string, any>;
         const checkID = BigInt(tweet.id_str);
-        if (checkID < id)
+        const isPartOfThisConversation = tweet.conversation_id === requestedStatus.conversation_id;
+        if (checkID < id && isPartOfThisConversation)
             ancestors.push(tweetToToot(tweet, conversation.globalObjects));
         else if (checkID > id)
             descendants.push(tweetToToot(tweet, conversation.globalObjects));
