@@ -411,6 +411,36 @@ app.get('/api/v1/statuses/:id(\\d+)', async (req, res) => {
     }
 });
 
+app.get('/api/v1/accounts/:id(\\d+)/followers', async (req, res) => {
+    const params = buildParams(true);
+    params.user_id = req.params.id;
+    params.count = req.body.limit;
+    const twreq = await req.oauth!.request('GET', `https://api.twitter.com/1.1/followers/list.json`, params);
+    const response = await twreq.json();
+    const users = response.users;
+    if (twreq.status === 200) {
+        res.send(users.map(userToAccount));
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+    res.status(404);
+});
+
+app.get('/api/v1/accounts/:id(\\d+)/following', async (req, res) => {
+    const params = buildParams(true);
+    params.user_id = req.params.id;
+    params.count = req.body.limit;
+    const twreq = await req.oauth!.request('GET', `https://api.twitter.com/1.1/friends/list.json`, params);
+    const response = await twreq.json();
+    const users = response.users;
+    if (twreq.status === 200) {
+        res.send(users.map(userToAccount));
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+    res.status(404);
+});
+
 app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const id = BigInt(req.params.id as string);
 
