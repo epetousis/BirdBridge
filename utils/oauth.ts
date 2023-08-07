@@ -55,7 +55,7 @@ export class OAuth {
         this.myID = accessToken.substring(0, accessToken.indexOf('-'));
     }
 
-    async request(method: string, url: string|URL, queryParams?: Record<string, string>, bodyParams?: Record<string, string> | null): Promise<Response> {
+    async request(method: string, url: string|URL, queryParams?: Record<string, string>, bodyParams?: Record<string, string> | null, jsonBody?: boolean): Promise<Response> {
         if (this.key === undefined) {
             this.key = await buildHmacKey(this.consumerSecret, this.accessTokenSecret);
         }
@@ -66,7 +66,8 @@ export class OAuth {
             oauth_signature_method: 'HMAC-SHA1',
             oauth_timestamp: Math.floor(new Date().getTime() / 1000).toString(),
             oauth_token: this.accessToken,
-            oauth_version: '1.0'
+            oauth_version: '1.0',
+            oauth_realm: "https://api.twitter.com/",
         };
 
         url = new URL(url);
@@ -78,10 +79,15 @@ export class OAuth {
 
         let body = null;
         if (bodyParams !== undefined && bodyParams !== null) {
-            body = new URLSearchParams(bodyParams);
+            if (jsonBody) {
+                body = JSON.stringify(bodyParams);
+            } else {
+                body = new URLSearchParams(bodyParams);
+            }
         }
 
-        oauthParams['oauth_signature'] = await makeSignature(this.key, oauthParams, method, url, body);
+        // Confusingly, you're not meant to pass JSON bodies into the signature function, but you are if it's an XML body.
+        oauthParams['oauth_signature'] = await makeSignature(this.key, oauthParams, method, url, jsonBody ? null : body);
 
         const oauthBits = [];
         for (const [key, value] of Object.entries(oauthParams)) {
@@ -90,6 +96,10 @@ export class OAuth {
 
         const headers: Record<string, string> = { ...CONFIG.headers };
         headers['Authorization'] = 'OAuth ' + oauthBits.join(', ');
+
+        if (jsonBody) {
+            headers['Content-Type'] = 'application/json';
+        }
 
         return fetch(url, { body, headers, method });
     }
@@ -101,7 +111,17 @@ export class OAuth {
         return this.request('POST', url, queryParams, bodyParams);
     }
 
-    /*async postGraphQL(key: string, variables: Record<string, any>, features?: Record<string, any>): Promise<Response> {
+    async getGraphQL(key: string, variables: Record<string, any>, features?: Record<string, any>): Promise<Response> {
+        return this.request('POST', `https://api.twitter.com/graphql${key}`, {
+            variables: JSON.stringify(variables),
+            features: JSON.stringify(features),
+        }, undefined);
+    }
 
-    }*/
+    async postGraphQL(key: string, variables: Record<string, any>, features?: Record<string, any>): Promise<Response> {
+        return this.request('POST', `https://api.twitter.com/graphql${key}`, undefined, {
+            variables: JSON.stringify(variables),
+            features: JSON.stringify(features),
+        }, true);
+    }
 }
