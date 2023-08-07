@@ -25,7 +25,7 @@ Tested with: [Pinafore](https://pinafore.social/), [Elk](https://elk.zone/), [Iv
 | View Home Timeline     | ✅      |                                                                                                                                             |
 | View Mentions Timeline | ✅      |                                                                                                                                             |
 | View Notifications     | 🔶     | Push not supported. Notification type filters are currently ignored. Quote tweets, favs/RTs of mentions and favs/RTs of your RTs not shown. |
-| View Tweet             | 🔶     | Quoted tweets in threads are incorrectly displayed as top-level members of the thread.                                                      |
+| View Tweet             | ✅     |                                                       |
 | View Profile           | 🔶     | Profiles and tweets can be viewed, but following/followers lists don't work yet. "No RTs" view missing. Some profile metadata missing.      |
 | View List Timeline     | ✅*     | May need pagination fixes.                                                                                                                  |
 | View Lists             | ✅*     | Mastodon doesn't let you view other people's lists, so this metadata isn't exposed                                                          |
@@ -37,7 +37,7 @@ Tested with: [Pinafore](https://pinafore.social/), [Elk](https://elk.zone/), [Iv
 | View Media             | ✅      | Images, videos, fake-GIFs all supported                                                                                                     |
 | Quote Tweets           | 🔶     | Quote tweets are rewritten to internal URLs (which Ivory is able to show when tapped), but something nicer would be REALLY cool...          |
 | Polls                  | 🔶     | Polls can be viewed but cannot yet be created or voted on                                                                                   |
-| Bookmark Tweets        | ❌      | Twitter API doesn't seem to expose bookmarked status properly                                                                               |
+| Bookmark Tweets        | 🔶      | Twitter API doesn't seem to expose bookmarked status properly. You can view existing bookmarks, you just can't add to them right now.                                                                               |
 | Pinned Tweets          | 🔶     | Pinned tweets will appear on profiles, but you cannot pin or unpin a tweet                                                                  |
 | Circle Tweets          | 🔶     | Circle tweets have a CW/spoiler attached to denote that they're special. Circle tweets cannot be posted yet                                 |
 | Reply Controls         | ❌      | Not sure how to translate this to Mastodon - I'm using the toot privacy flag to denote protected accounts                                   |
@@ -45,7 +45,7 @@ Tested with: [Pinafore](https://pinafore.social/), [Elk](https://elk.zone/), [Iv
 | Follow/Unfollow        | ❌      |                                                                                                                                             |
 | Block/Unblock          | ❌      | Blocks will be respected but cannot be modified yet                                                                                         |
 | Disable Retweets       | ❌      | Setting respected (this is handled by Twitter's servers) but cannot be modified yet                                                         |
-| Search                 | ❌      |                                                                                                                                             |
+| Search                 | ✅      |                                                                                                                                             |
 | Direct Messages        | ❌❌❌    | Mastodon's DM paradigm is just too different to ever support these, honestly                                                                |
 | Follow Requests        | ❌      | Not yet sure if this would fit into Mastodon's UI cleanly                                                                                   |
 
