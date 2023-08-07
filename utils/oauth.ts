@@ -112,7 +112,7 @@ export class OAuth {
     }
 
     async getGraphQL(key: string, variables: Record<string, any>, features?: Record<string, any>): Promise<Response> {
-        return this.request('POST', `https://api.twitter.com/graphql${key}`, {
+        return this.request('GET', `https://api.twitter.com/graphql${key}`, {
             variables: JSON.stringify(variables),
             features: JSON.stringify(features),
         }, undefined);
