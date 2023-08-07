@@ -1,6 +1,26 @@
 import { crypto, toHashString } from "https://deno.land/std@0.173.0/crypto/mod.ts";
 import {CONFIG} from "../config.ts";
 
+// ALL of these are mandatory for some reason
+const GRAPHQL_FEATURES = {
+    "longform_notetweets_inline_media_enabled": true,
+    "super_follow_badge_privacy_enabled": true,
+    "longform_notetweets_rich_text_read_enabled": true,
+    "super_follow_user_api_enabled": true,
+    "super_follow_tweet_api_enabled": true,
+    "hidden_profile_likes_enabled": false,
+    "hidden_profile_subscriptions_enabled": false,
+    "android_graphql_skip_api_media_color_palette": true,
+    "creator_subscriptions_tweet_preview_api_enabled": true,
+    "freedom_of_speech_not_reach_fetch_enabled": true,
+    "tweetypie_unmention_optimization_enabled": true,
+    "longform_notetweets_consumption_enabled": true,
+    "subscriptions_verification_info_enabled": true,
+    "blue_business_profile_image_shape_enabled": true,
+    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": true,
+    "super_follow_exclusive_tweet_notifications_enabled": true,
+};
+
 function percentEncode(s: string): string {
     return encodeURIComponent(s).replace(/['()*!]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 }
@@ -112,16 +132,26 @@ export class OAuth {
     }
 
     async getGraphQL(key: string, variables: Record<string, any>, features?: Record<string, any>): Promise<Response> {
+        const finalFeatures = {...GRAPHQL_FEATURES};
+        if (features) {
+            Object.assign(finalFeatures, features);
+        }
+
         return this.request('GET', `https://api.twitter.com/graphql${key}`, {
             variables: JSON.stringify(variables),
-            features: JSON.stringify(features),
+            features: JSON.stringify(finalFeatures),
         }, undefined);
     }
 
     async postGraphQL(key: string, variables: Record<string, any>, features?: Record<string, any>): Promise<Response> {
+        const finalFeatures = {...GRAPHQL_FEATURES};
+        if (features) {
+            Object.assign(finalFeatures, features);
+        }
+
         return this.request('POST', `https://api.twitter.com/graphql${key}`, undefined, {
             variables: JSON.stringify(variables),
-            features: JSON.stringify(features),
+            features: JSON.stringify(finalFeatures),
         }, true);
     }
 }
