@@ -491,15 +491,23 @@ app.get('/api/v2/search', async (req, res) => {
     if (req.body.limit == '1' && req.body.resolve == '1' && req.body.type === 'statuses') {
         const match = /^(.+)\/@([^/]+)\/(\d+)$/.exec(req.body.q as string);
         if (match && match[1] === CONFIG.root) {
-            const params = buildParams(true);
-            params.id = match[3];
-            const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${params.id}.json`, params);
-            const conversation = await twreq.json();
-            const tweet = conversation.globalObjects.tweets[params.id];
-            if (!conversation.errors) {
-                res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet, conversation.globalObjects)]});
+            const params = {};
+            const variables = {
+                "includeTweetImpression":true,
+                "includeHasBirdwatchNotes":false,
+                "includeEditPerspective":false,
+                "includeEditControl":true,
+                "includeCommunityTweetRelationship":true,
+                "rest_id":match[3],
+                "includeTweetVisibilityNudge":true,
+            };
+            const twreq = await req.oauth!.getGraphQL(`/2hxSMXGNMNIocZb8pUn9bQ/TweetResultByIdQuery`, variables);
+            const response = await twreq.json();
+            const tweet = response.data.tweet_result.result.legacy;
+            if (!response.errors) {
+                res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet)]});
             } else {
-                res.status(twreq.status).send({error: JSON.stringify(conversation.errors)});
+                res.status(twreq.status).send({error: JSON.stringify(response.errors)});
             }
         }
     } else if (req.body.type === 'statuses') {
