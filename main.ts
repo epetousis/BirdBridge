@@ -441,6 +441,36 @@ app.get('/api/v1/accounts/:id(\\d+)/following', async (req, res) => {
     res.status(404);
 });
 
+app.get('/api/v1/accounts/familiar_followers', async (req, res) => {
+    const params = {};
+    params.variables = {
+        "include_smart_block": false,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "rest_id": req.body.id,
+        "count": req.body.limit,
+        "includeTweetVisibilityNudge": true
+    }
+    params.features = {
+        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": true,
+    };
+    const twreq = await req.oauth!.getGraphQL(`/Mj1OuwJog0E8Wo1JKf0zbg/UserFriendsFollowingTimelineQuery`, params.variables, params.features);
+    const response = await twreq.json();
+    const users = response.data.user.timeline_response.timeline.instructions
+      .find((i) => i['__typename'] === 'TimelineAddEntries')
+      .entries
+      .map((e) => e.content.content?.userResult.result.legacy)
+      .filter((u) => !!u);
+    if (twreq.status === 200) {
+        res.send(users.map(userToAccount));
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+    res.status(404);
+});
+
 app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const id = BigInt(req.params.id as string);
 
