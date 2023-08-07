@@ -672,21 +672,59 @@ app.post('/api/v1/statuses', async (req, res) => {
       *media_ids
       media_tags
      */
-    const params = buildParams(true);
-    params.status = text;
+    const params = {};
+    params.variables = {
+        "nullcast":false,
+        "includeTweetImpression":true,
+        "includeHasBirdwatchNotes":false,
+        "includeEditPerspective":false,
+        "includeEditControl":true,
+        "includeCommunityTweetRelationship":false,
+        "includeTweetVisibilityNudge":true,
+        "tweet_text":text,
+    };
     if (reply_target) {
         // Let's not set this for now because Ivory seems to include the @ name in the toot
         //params.auto_populate_reply_metadata = 'true';
-        params.in_reply_to_status_id = reply_target;
+        params.variables.reply = {"exclude_reply_user_ids":[],"in_reply_to_tweet_id":reply_target};
     }
 
-    const twreq = await req.oauth!.post('https://api.twitter.com/1.1/statuses/update.json', params);
-    const tweet = await twreq.json();
+    if (req.body.visibility === 'direct') {
+        // Fail immediately if someone tries to direct message - we don't support that and probably never will.
+        res.status(400).send({error: 'Direct messages are not supported.'});
+        return;
+    }
+
+    if (req.body.visibility !== 'public') {
+        // So Twitter set up Circles in a way that I guess was meant to pave the way for multiple "friends lists"?
+        // Cool idea but now that Elon's bought it there's no shot this is ever getting finished. Just makes for more work here.
+        const friendsListVariables = {"includeTweetImpression":true,"includeHasBirdwatchNotes":false,"includeEditPerspective":false,"includeEditControl":true};
+        const twreq = await req.oauth!.getGraphQL('/LaVEkyIlCyXrD_QXqWkdYA/TrustedFriendsListsQuery', friendsListVariables);
+        const response = await twreq.json();
+        if (twreq.status === 200) {
+            if (response.data.authenticated_user_trusted_friends_lists.length === 0) {
+                res.status(400).send({error: 'You must create a trusted friends list (i.e a Twitter Circle) before you can use it.'});
+                return;
+            }
+            const firstList = response.data.authenticated_user_trusted_friends_lists[0];
+            params.variables.trusted_friends_control_options = {"trusted_friends_list_id":firstList.rest_id};
+        } else {
+            res.status(500).send({error: 'Failed to retrieve trusted friend list information. Your post has not been created for your safety.'});
+            return;
+        }
+    }
+
+    const twreq = await req.oauth!.postGraphQL('/f4fzP-emDqiJatuGuzfApg/CreateTweet', params.variables);
+    const data = (await twreq.json()).data;
     if (twreq.status === 200) {
+        const tweet = data.create_tweet.tweet_result.result.legacy;
+        tweet.user = data.create_tweet.tweet_result.result.core.user_result.result.legacy;
+        // Having weird issues with your client? You might have forgotten to include the tweet ID.
+        tweet.id_str = data.create_tweet.tweet_result.result.rest_id;
         res.send(tweetToToot(tweet));
     } else {
         // TODO: better/more consistent handling of errors...
-        res.status(twreq.status).send({error: JSON.stringify(tweet)});
+        res.status(twreq.status).send({error: data.message});
     }
 });
 
