@@ -291,6 +291,35 @@ app.get('/api/v1/filters', (req, res) => {
     res.send([]);
 });
 
+app.get('/api/v1/favourites', async (req, res) => {
+    const variables = {
+        "includeTweetImpression":true,
+        "includeHasBirdwatchNotes":false,
+        "includeEditPerspective":false,
+        "includeEditControl":true,
+        "count":req.body.limit,
+        "rest_id":req.oauth!.myID,
+        "includeTweetVisibilityNudge":true,
+    };
+    const features = {
+        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": true,
+    };
+    const twreq = await req.oauth!.getGraphQL('/xUGO-xGK_bD7TWpW2des6Q/FavoritesByTimeTimelineV2', variables, features);
+    const response = await twreq.json();
+    const tweets = response.data.user_result.result.timeline_response.timeline.instructions
+      .find((i) => i['__typename'] === 'TimelineAddEntries')
+      .entries
+      .map((e) => ({
+        ...e.content.content?.tweetResult.result.legacy,
+        user: e.content.content?.tweetResult.result.core.user_result.result.legacy,
+        // The GraphQL "legacy" param just straight up has the ID missing...righto
+        id_str: e.content.content?.tweetResult.result.rest_id,
+      }))
+      .filter((t) => !!t && t.user);
+    const toots = tweets.map(tweetToToot);
+    res.send(toots);
+});
+
 app.get('/api/v1/lists', async (req, res) => {
     const twreq = await req.oauth!.request(
         'GET',
