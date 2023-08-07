@@ -595,13 +595,21 @@ app.post('/api/v1/statuses', async (req, res) => {
 });
 
 app.delete('/api/v1/statuses/:id(\\d+)', async (req, res) => {
-    const params = buildParams(true);
-    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/statuses/destroy/${req.params.id}.json`, params);
+    const params = {};
+    params.variables = {
+        "includeTweetImpression":true,
+        "includeHasBirdwatchNotes":false,
+        "includeEditPerspective":false,
+        "tweet_id": req.params.id,
+        "includeEditControl":true,
+    };
+    const twreq = await req.oauth!.postGraphQL(`/kZyJ4Q1TNsZNByfrGX7Huw/DeleteTweet`, params.variables);
     const tweet = await twreq.json();
     if (twreq.status === 200) {
-        res.send(tweetToToot(tweet));
+        // FIXME: Mastodon normally returns the deleted tweet. I have not implemented this because I am lazy.
+        res.status(200).send({});
     } else {
-        res.status(twreq.status).send({error: JSON.stringify(tweet)});
+        res.status(twreq.status).send({error: JSON.stringify(data?.errors?.[0]?.message)});
     }
 });
 
