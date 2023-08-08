@@ -495,6 +495,33 @@ app.get('/api/v1/statuses/:id(\\d+)/favourited_by', async (req, res) => {
     }
 });
 
+app.get('/api/v1/statuses/:id(\\d+)/reblogged_by', async (req, res) => {
+    // NOTE: this endpoint doesn't show quote tweets.
+    const variables = {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "tweet_id": req.params.id,
+        "includeEditControl": true,
+        "includeTweetVisibilityNudge": true
+    };
+    const features = {
+        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": true,
+    };
+    const twreq = await req.oauth!.getGraphQL(`/qYfITpqIDKrPUwJjledDqw/RetweetersTimeline`, variables, features);
+    const response = await twreq.json();
+    const users = response.data.timeline_response.timeline.instructions
+      .find((i) => i['__typename'] === 'TimelineAddEntries')
+      .entries
+      .map((e) => e.content.content?.userResult.result.legacy)
+      .filter((u) => !!u);
+    if (twreq.status === 200) {
+        res.send(users.map(userToAccount));
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+});
+
 app.get('/api/v1/accounts/:id(\\d+)/followers', async (req, res) => {
     const params = buildParams(true);
     params.user_id = req.params.id;
