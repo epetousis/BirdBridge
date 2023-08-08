@@ -579,7 +579,6 @@ app.get('/api/v2/search', async (req, res) => {
     if (req.body.limit == '1' && req.body.resolve == '1' && req.body.type === 'statuses') {
         const match = /^(.+)\/@([^/]+)\/(\d+)$/.exec(req.body.q as string);
         if (match && match[1] === CONFIG.root) {
-            const params = {};
             const variables = {
                 "includeTweetImpression":true,
                 "includeHasBirdwatchNotes":false,
@@ -591,8 +590,11 @@ app.get('/api/v2/search', async (req, res) => {
             };
             const twreq = await req.oauth!.getGraphQL(`/2hxSMXGNMNIocZb8pUn9bQ/TweetResultByIdQuery`, variables);
             const response = await twreq.json();
-            const tweet = response.data.tweet_result.result.legacy;
             if (!response.errors) {
+                const tweet = response.data.tweet_result.result.legacy;
+                tweet.user = response.data.tweet_result.result.core.user_result.result.legacy;
+                // Having weird issues with your client? You might have forgotten to include the tweet ID.
+                tweet.id_str = response.data.tweet_result.result.rest_id;
                 res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet)]});
             } else {
                 res.status(twreq.status).send({error: JSON.stringify(response.errors)});
