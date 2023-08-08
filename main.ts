@@ -3,7 +3,7 @@ import express from "npm:express@4.18.2";
 import "npm:express-async-errors@3.1.1";
 import multer from "npm:multer@1.4.5-lts.1";
 import cors from "npm:cors@2.8.5";
-import {userToAccount, tweetToToot, activityToNotification} from "./conversion.ts";
+import {userToAccount, tweetToToot, activityToNotification, graphQLTweetResultToToot} from "./conversion.ts";
 import {OAuth} from "./utils/oauth.ts";
 import {
     addPageLinksToResponse,
@@ -309,12 +309,7 @@ app.get('/api/v1/favourites', async (req, res) => {
     const tweets = response.data.user_result.result.timeline_response.timeline.instructions
       .find((i) => i['__typename'] === 'TimelineAddEntries')
       .entries
-      .map((e) => ({
-        ...e.content.content?.tweetResult.result.legacy,
-        user: e.content.content?.tweetResult.result.core.user_result.result.legacy,
-        // The GraphQL "legacy" param just straight up has the ID missing...righto
-        id_str: e.content.content?.tweetResult.result.rest_id,
-      }))
+      .map((e) => graphQLTweetResultToToot(e.content.content?.tweetResult.result))
       .filter((t) => !!t && t.user);
     const toots = tweets.map(tweetToToot);
     res.send(toots);
@@ -338,12 +333,7 @@ app.get('/api/v1/bookmarks', async (req, res) => {
     const tweets = response.data.timeline_response.timeline.instructions
       .find((i) => i['__typename'] === 'TimelineAddEntries')
       .entries
-      .map((e) => ({
-        ...e.content.content?.tweetResult.result.legacy,
-        user: e.content.content?.tweetResult.result.core.user_result.result.legacy,
-        // The GraphQL "legacy" param just straight up has the ID missing...righto
-        id_str: e.content.content?.tweetResult.result.rest_id,
-      }))
+      .map((e) => graphQLTweetResultToToot(e.content.content?.tweetResult.result))
       .filter((t) => !!t && t.user);
     const toots = tweets.map(tweetToToot);
     res.send(toots);
@@ -678,11 +668,7 @@ app.get('/api/v2/search', async (req, res) => {
             const twreq = await req.oauth!.getGraphQL(`/2hxSMXGNMNIocZb8pUn9bQ/TweetResultByIdQuery`, variables);
             const response = await twreq.json();
             if (!response.errors) {
-                const tweet = response.data.tweet_result.result.legacy;
-                tweet.user = response.data.tweet_result.result.core.user_result.result.legacy;
-                // Having weird issues with your client? You might have forgotten to include the tweet ID.
-                tweet.id_str = response.data.tweet_result.result.rest_id;
-                res.send({accounts: [], hashtags: [], statuses: [tweetToToot(tweet)]});
+                res.send({accounts: [], hashtags: [], statuses: [graphQLTweetResultToToot(response.data.tweet_result.result)]});
             } else {
                 res.status(twreq.status).send({error: JSON.stringify(response.errors)});
             }
@@ -806,11 +792,7 @@ app.post('/api/v1/statuses', async (req, res) => {
     const twreq = await req.oauth!.postGraphQL('/f4fzP-emDqiJatuGuzfApg/CreateTweet', params.variables);
     const data = (await twreq.json()).data;
     if (twreq.status === 200) {
-        const tweet = data.create_tweet.tweet_result.result.legacy;
-        tweet.user = data.create_tweet.tweet_result.result.core.user_result.result.legacy;
-        // Having weird issues with your client? You might have forgotten to include the tweet ID.
-        tweet.id_str = data.create_tweet.tweet_result.result.rest_id;
-        res.send(tweetToToot(tweet));
+        res.send(graphQLTweetResultToToot(data.create_tweet.tweet_result.result));
     } else {
         // TODO: better/more consistent handling of errors...
         res.status(twreq.status).send({error: data.message});

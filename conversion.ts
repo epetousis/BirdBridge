@@ -404,6 +404,16 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
     return toot;
 }
 
+export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
+    if (!tweetResult) return undefined;
+
+    const tweet = tweetResult.legacy;
+    tweet.user = tweetResult.core.user_result.result.legacy;
+    // Having weird issues with your client? You might have forgotten to include the tweet ID.
+    tweet.id_str = tweetResult.rest_id;
+    return tweetToToot(tweet);
+}
+
 export function activityToNotification(activity: Record<string, any>): Record<string, any> | null {
     const note: Record<string, any> = {};
 
