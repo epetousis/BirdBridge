@@ -587,6 +587,30 @@ app.get('/api/v1/accounts/familiar_followers', async (req, res) => {
     res.status(404);
 });
 
+app.post('/api/v1/accounts/:id(\\d+)/follow', async (req, res) => {
+    const params = buildParams(true);
+    params.user_id = req.params.id;
+    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/friendships/create.json`, params);
+    const response = await twreq.json();
+    if (twreq.status === 200) {
+        res.send({ id: params.user_id, following: true });
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+});
+
+app.post('/api/v1/accounts/:id(\\d+)/unfollow', async (req, res) => {
+    const params = buildParams(true);
+    params.user_id = req.params.id;
+    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/friendships/destroy.json`, params);
+    const response = await twreq.json();
+    if (twreq.status === 200) {
+        res.send({ id: params.user_id, following: false });
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+});
+
 app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const id = BigInt(req.params.id as string);
 
