@@ -461,6 +461,11 @@ app.get('/api/v1/statuses/:id(\\d+)', async (req, res) => {
     params.id = req.params.id;
     const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${params.id}.json`, params);
     const conversation = await twreq.json();
+    if ('errors' in conversation && conversation.errors.some((e) => e.code === 34)) {
+        // Code 34 === tweet does not exist. Respond accordingly.
+        res.status(404).send({error: 'Record not found'});
+        return;
+    }
     const tweet = conversation.globalObjects.tweets[params.id];
     if (twreq.status === 200) {
         res.send(tweetToToot(tweet, conversation.globalObjects));
@@ -588,6 +593,11 @@ app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const params = buildParams(true);
     const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${id.toString()}.json`, params);
     const conversation = await twreq.json();
+    if ('errors' in conversation && conversation.errors.some((e) => e.code === 34)) {
+        // Code 34 === tweet does not exist. Respond accordingly.
+        res.status(404).send({error: 'Record not found'});
+        return;
+    }
 
     const ancestors = [];
     const descendants = [];
