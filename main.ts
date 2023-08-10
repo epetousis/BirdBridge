@@ -15,6 +15,9 @@ import {
 import {UserCache} from "./utils/userCache.ts";
 import {CONFIG} from "./config.ts";
 import {setup as setupAuthflow} from "./apis/authflow.ts";
+import { red } from "https://deno.land/std@0.197.0/fmt/colors.ts";
+
+console.log(red('Starting BirdBridge...'));
 
 const userCacheMap = new Map<string, UserCache>();
 function getUserCache(oauth: OAuth): UserCache {
