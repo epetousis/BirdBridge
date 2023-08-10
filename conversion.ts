@@ -405,7 +405,7 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
 }
 
 export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
-    if (!tweetResult) return undefined;
+    if (!tweetResult || !tweetResult.legacy || !tweetResult.core || !tweetResult.rest_id) return undefined;
 
     const tweet = tweetResult.legacy;
     tweet.user = tweetResult.core.user_result.result.legacy;
