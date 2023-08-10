@@ -126,7 +126,7 @@ export function userToAccount(user: Record<string, any>): Record<string, any> {
     account.display_name = user.name;
     // Find all the @mentions in the user's description and turn them into account links.
     // This regex aims to match only Twitter @s (and not, e.g email addresses, BlueSky or Mastodon @s)
-    account.note = user.description.replace(/@(\w+)(?!@|\w|\.(?!\s))/g, (match: string) => {
+    account.note = user.description?.replace(/@(\w+)(?!@|\w|\.(?!\s))/g, (match: string) => {
         return `<a href="${CONFIG.root}/@${match}">${match}</a>`;
     });
     account.avatar = user.profile_image_url_https.replace('_normal', '');
