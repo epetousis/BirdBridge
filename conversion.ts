@@ -116,8 +116,9 @@ export function convertFormattedText(text: string, entities: Record<string, any[
     };
 }
 
-export function userToAccount(user: Record<string, any>): Record<string, any> {
+export function userToAccount(user: Record<string, any>): Record<string, any> | null {
     const account: Record<string, any> = {};
+    if (!user.id_str) return null;
 
     account.id = user.id_str;
     account.username = user.screen_name;
@@ -469,12 +470,12 @@ export function timelineInstructionsToToots(instructions: any[]): [toots: Record
         .filter((t) => !!t), nextCursor];
 };
 
-export function timelineInstructionsToAccounts(instructions: any[]): Record<string, any> {
+export function timelineInstructionsToAccounts(instructions: any[]): Record<string, any> | null {
     return instructions
         .find((i) => i['__typename'] === 'TimelineAddEntries')
-        .entries
-        .map((e) => userToAccount(e.content.content?.userResult.result.legacy))
-        .filter((u) => !!u);
+        ?.entries
+        ?.map((e) => userToAccount(e.content.content?.userResult.result.legacy))
+        ?.filter((u) => !!u) ?? null;
 };
 
 export function activityToNotification(activity: Record<string, any>): Record<string, any> | null {
