@@ -309,12 +309,11 @@ app.get('/api/v1/favourites', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/xUGO-xGK_bD7TWpW2des6Q/FavoritesByTimeTimelineV2', variables, features);
     const response = await twreq.json();
-    const tweets = response.data.user_result.result.timeline_response.timeline.instructions
+    const toots = response.data.user_result.result.timeline_response.timeline.instructions
       .find((i) => i['__typename'] === 'TimelineAddEntries')
       .entries
       .map((e) => graphQLTweetResultToToot(e.content.content?.tweetResult.result))
-      .filter((t) => !!t && t.user);
-    const toots = tweets.map(tweetToToot);
+      .filter((t) => !!t);
     res.send(toots);
 });
 
@@ -333,12 +332,11 @@ app.get('/api/v1/bookmarks', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/E-Rqts_gtMp60KgQK2Xv9A/BookmarkTimelineV2', variables, features);
     const response = await twreq.json();
-    const tweets = response.data.timeline_response.timeline.instructions
+    const toots = response.data.timeline_response.timeline.instructions
       .find((i) => i['__typename'] === 'TimelineAddEntries')
       .entries
       .map((e) => graphQLTweetResultToToot(e.content.content?.tweetResult.result))
-      .filter((t) => !!t && t.user);
-    const toots = tweets.map(tweetToToot);
+      .filter((t) => !!t);
     res.send(toots);
 });
 
