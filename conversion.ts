@@ -118,7 +118,7 @@ export function convertFormattedText(text: string, entities: Record<string, any[
 
 export function userToAccount(user: Record<string, any>): Record<string, any> | null {
     const account: Record<string, any> = {};
-    if (!user.id_str) return null;
+    if (!user || !user.id_str) return null;
 
     account.id = user.id_str;
     account.username = user.screen_name;
