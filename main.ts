@@ -870,14 +870,25 @@ app.get('/api/v1/accounts/search', async (req, res) => {
     if (req.body.limit == '1' && req.body.resolve == '1') {
         const match = /^([^@]+)@([^@]+)$/.exec(req.body.q as string);
         if (match && match[2] === CONFIG.domain) {
-            const params = buildParams(true);
-            params.screen_name = match[1];
-            const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/users/show.json', params);
-            const user = await twreq.json();
+            const variables = {
+                "include_smart_block": true,
+                "includeTweetImpression": true,
+                "includeTranslatableProfile": true,
+                "includeHasBirdwatchNotes": false,
+                "include_tipjar": true,
+                "include_highlights_info": true,
+                "includeEditPerspective": false,
+                "screen_name": match[1],
+                "include_reply_device_follow": true,
+                "includeEditControl": true,
+                "include_verified_phone_status": false
+            };
+            const twreq = await req.oauth!.getGraphQL('/Kp3gw_7XAwbWYoFTTAlVog/UserResultByScreenNameQuery', variables);
+            const response = await twreq.json();
             if (twreq.status === 200) {
-                res.send([userToAccount(user)]);
+                res.send([graphQLTweetResultToToot(response.data.user_result.result)]);
             } else {
-                res.status(twreq.status).send({error: JSON.stringify(user)});
+                res.status(twreq.status).send({error: response.errors});
             }
             return;
         }
