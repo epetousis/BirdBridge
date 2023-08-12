@@ -419,6 +419,38 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
     return tweetToToot(tweet);
 }
 
+export function timelineInstructionsToToots(instructions: any[]): [toots: Record<string, any>[], nextCursor?: string] {
+    const addEntries = instructions
+        .find((i) => i['__typename'] === 'TimelineAddEntries')
+        .entries;
+
+    const finalEntry = addEntries[addEntries.length - 1].content.content;
+    let nextCursor;
+    if (
+        finalEntry
+        && finalEntry.__typename === 'TimelineTimelineCursor'
+        && finalEntry.cursorType === 'Bottom'
+    ) {
+        nextCursor = finalEntry.value;
+    }
+
+    return [addEntries
+        .flatMap((e) => [
+            ...(e.content.items
+            ? e.content.items.map((item) => graphQLTweetResultToToot(item.item.content?.tweetResult?.result))
+            : [graphQLTweetResultToToot(e.content.content?.tweetResult?.result)])
+        ])
+        .filter((t) => !!t), nextCursor];
+};
+
+export function timelineInstructionsToAccounts(instructions: any[]): Record<string, any> {
+    return instructions
+        .find((i) => i['__typename'] === 'TimelineAddEntries')
+        .entries
+        .map((e) => userToAccount(e.content.content?.userResult.result.legacy))
+        .filter((u) => !!u);
+};
+
 export function activityToNotification(activity: Record<string, any>): Record<string, any> | null {
     const note: Record<string, any> = {};
 
