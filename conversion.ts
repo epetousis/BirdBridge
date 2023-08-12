@@ -444,10 +444,15 @@ export function graphQLUserToAccount(userResult: Record<string, any>) {
     return userToAccount(userResult.legacy);
 }
 
-export function timelineInstructionsToToots(instructions: any[]): [toots: Record<string, any>[], nextCursor?: string] {
-    const addEntries = instructions
-        .find((i) => i['__typename'] === 'TimelineAddEntries')
-        .entries;
+export function timelineInstructionsToToots(instructions: any[], pinned?: boolean): [toots: Record<string, any>[], nextCursor?: string] {
+    let addEntries = pinned
+        ? [instructions
+            ?.find((i) => i['__typename'] === 'TimelinePinEntry')
+            ?.entry]
+        : [...instructions
+            ?.find((i) => i['__typename'] === 'TimelineAddEntries')
+            ?.entries];
+    addEntries = addEntries.filter((e) => !!e);
 
     const finalEntry = addEntries
     .map((e) => e.content?.content ?? e.content)

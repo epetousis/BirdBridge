@@ -379,20 +379,51 @@ app.get('/api/v1/accounts/:id(\\d+)/featured_tags', async (req, res) => {
     res.send([]);
 });
 
+// This is kind of stupid but also I don't really see another way of going about it - we cache
+// the next cursor for each account's status requests separately, so that we can paginate them
+// We also make sure to separate them by user, so that we don't reuse the same cursor across
+// accounts, which would most definitely NOT work.
+const accountStatusesNextCursors = new Map<string, string>();
+
 app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
-    // TODO: replace the pinned tweets endpoint with a new one. Currently, it 403s.
-    if (req.body.pinned) {
-        res.send([]);
+    const cacheKey = `${req.oauth.myID}-${req.params.id}`;
+
+    if (req.body.max_id && !accountStatusesNextCursors.get(cacheKey)) res.send([]);
+
+    const twreq = await req.oauth!.getGraphQL('/bulo6Tdznb4dPxWwL2iYnw/UserWithProfileTweetsQueryV2', {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "count": Math.min(Number.parseInt(req.body.limit, 10), 100),
+        "rest_id": req.params.id,
+        "includeTweetVisibilityNudge": true,
+        "autoplay_enabled": true,
+        "cursor": req.body.max_id && !req.body.pinned ? accountStatusesNextCursors.get(cacheKey) : undefined,
+    }, {
+        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": true,
+    });
+    if (twreq.status === 429) {
+        res.status(429).send({error: 'Rate limit exceeded.'});
         return;
     }
+    const response = await twreq.json();
+    if (response.errors) {
+        res.status(500).send({error: response.errors});
+    }
+    let [toots, nextCursor] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, !!req.body.pinned)
+      .filter((t) => !(t?.reblog && req.body.exclude_reblogs));
+    accountStatusesNextCursors.set(cacheKey, nextCursor);
+    // Ivory cracks the shits if you return the exact same tweets twice, so make sure to not do that
+    if (req.body.max_id) {
+        const maxId = Number.parseInt(req.body.max_id, 10);
+        toots = toots?.filter((t) => t.id <= maxId);
+    }
+    if (req.body.min_id) {
+        const minId = Number.parseInt(req.body.min_id, 10);
+        toots = toots?.filter((t) => t.id >= minId);
+    }
 
-    const params = buildParams(true);
-    params.user_id = req.params.id;
-    injectPagingInfo(req.body, params);
-
-    const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/statuses/user_timeline.json', params);
-    const tweets = await twreq.json();
-    const toots = tweets.map(tweetToToot);
     addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
     res.send(toots);
 });
