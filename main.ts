@@ -388,27 +388,28 @@ app.get('/api/v1/accounts/:id(\\d+)/featured_tags', async (req, res) => {
 });
 
 app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
-    if (req.body.pinned) {
-        const userCache = getUserCache(req.oauth!);
-        const user = await userCache.fetchUser(req.params.id);
-        const pinned = [];
-        if (user.pinned_tweet_ids_str) {
-            const params = buildParams(true);
-            params.id = user.pinned_tweet_ids_str.join(',');
-            const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/statuses/lookup.json', params);
-            const map = new Map();
-            for (const tweet of await twreq.json()) {
-                map.set(tweet.id_str, tweet);
-            }
-            for (const id of user.pinned_tweet_ids_str) {
-                const tweet = map.get(id);
-                if (tweet !== undefined)
-                    pinned.push(tweetToToot(tweet));
-            }
-        }
-        res.send(pinned);
-        return;
-    }
+    // TODO: replace the pinned tweets endpoint with a new one. Currently, it 403s.
+    // if (req.body.pinned) {
+    //     const userCache = getUserCache(req.oauth!);
+    //     const user = await userCache.fetchUser(req.params.id);
+    //     const pinned = [];
+    //     if (user.pinned_tweet_ids_str) {
+    //         const params = buildParams(true);
+    //         params.id = user.pinned_tweet_ids_str.join(',');
+    //         const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/statuses/lookup.json', params);
+    //         const map = new Map();
+    //         for (const tweet of await twreq.json()) {
+    //             map.set(tweet.id_str, tweet);
+    //         }
+    //         for (const id of user.pinned_tweet_ids_str) {
+    //             const tweet = map.get(id);
+    //             if (tweet !== undefined)
+    //                 pinned.push(tweetToToot(tweet));
+    //         }
+    //     }
+    //     res.send(pinned);
+    //     return;
+    // }
 
     const params = buildParams(true);
     params.user_id = req.params.id;
