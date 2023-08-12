@@ -3,7 +3,7 @@ import express from "npm:express@4.18.2";
 import "npm:express-async-errors@3.1.1";
 import multer from "npm:multer@1.4.5-lts.1";
 import cors from "npm:cors@2.8.5";
-import {userToAccount, tweetToToot, activityToNotification, graphQLTweetResultToToot, timelineInstructionsToToots, timelineInstructionsToAccounts} from "./conversion.ts";
+import {userToAccount, tweetToToot, activityToNotification, graphQLTweetResultToToot, timelineInstructionsToToots, timelineInstructionsToAccounts, convertCard} from "./conversion.ts";
 import {OAuth} from "./utils/oauth.ts";
 import {
     addPageLinksToResponse,
@@ -952,6 +952,11 @@ app.get('/api/v1/accounts/search', async (req, res) => {
     }
 
     res.sendStatus(404);
+});
+
+
+app.post('/api/v1/polls/:id(\\d+)/votes', async (req, res) => {
+    res.status(500).send({error: 'Polls are not yet supported. Please vote in the Twitter app.'});
 });
 
 app.listen(8000);
