@@ -383,6 +383,10 @@ app.get('/api/v1/accounts/:id(\\d+)', async (req, res) => {
     res.send(userToAccount(user));
 });
 
+app.get('/api/v1/accounts/:id(\\d+)/featured_tags', async (req, res) => {
+    res.send([]);
+});
+
 app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
     if (req.body.pinned) {
         const userCache = getUserCache(req.oauth!);
