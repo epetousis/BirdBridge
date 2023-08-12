@@ -432,6 +432,10 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
     return tweetToToot(tweet);
 }
 
+export function graphQLUserToAccount(userResult: Record<string, any>) {
+    return userToAccount(userResult.legacy);
+}
+
 export function timelineInstructionsToToots(instructions: any[]): [toots: Record<string, any>[], nextCursor?: string] {
     const addEntries = instructions
         .find((i) => i['__typename'] === 'TimelineAddEntries')

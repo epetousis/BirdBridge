@@ -3,7 +3,7 @@ import express from "npm:express@4.18.2";
 import "npm:express-async-errors@3.1.1";
 import multer from "npm:multer@1.4.5-lts.1";
 import cors from "npm:cors@2.8.5";
-import {userToAccount, tweetToToot, activityToNotification, graphQLTweetResultToToot, timelineInstructionsToToots, timelineInstructionsToAccounts, convertCard} from "./conversion.ts";
+import {userToAccount, tweetToToot, activityToNotification, graphQLTweetResultToToot, timelineInstructionsToToots, timelineInstructionsToAccounts, convertCard, graphQLUserToAccount} from "./conversion.ts";
 import {OAuth} from "./utils/oauth.ts";
 import {
     addPageLinksToResponse,
@@ -936,12 +936,15 @@ app.get('/api/v1/accounts/search', async (req, res) => {
                 "includeEditControl": true,
                 "include_verified_phone_status": false
             };
-            const twreq = await req.oauth!.getGraphQL('/Kp3gw_7XAwbWYoFTTAlVog/UserResultByScreenNameQuery', variables);
+            const features = {
+                'verified_phone_label_enabled': true,
+            };
+            const twreq = await req.oauth!.getGraphQL('/Kp3gw_7XAwbWYoFTTAlVog/UserResultByScreenNameQuery', variables, features);
             const response = await twreq.json();
             if (twreq.status === 200) {
-                res.send([graphQLTweetResultToToot(response.data.user_result.result)]);
+                res.send([graphQLUserToAccount(response.data.user_result.result)]);
             } else {
-                res.status(twreq.status).send({error: response.errors});
+                res.status(twreq.status).send({error: JSON.stringify(response.errors)});
             }
             return;
         }
