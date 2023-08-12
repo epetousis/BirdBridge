@@ -449,12 +449,13 @@ export function timelineInstructionsToToots(instructions: any[]): [toots: Record
         .find((i) => i['__typename'] === 'TimelineAddEntries')
         .entries;
 
-    const finalEntry = addEntries[addEntries.length - 1].content.content;
+    const finalEntry = addEntries
+    .map((e) => e.content?.content ?? e.content)
+    .find((content) => content?.__typename === 'TimelineTimelineCursor'
+            && content.cursorType === 'Bottom');
     let nextCursor;
     if (
         finalEntry
-        && finalEntry.__typename === 'TimelineTimelineCursor'
-        && finalEntry.cursorType === 'Bottom'
     ) {
         nextCursor = finalEntry.value;
     }
