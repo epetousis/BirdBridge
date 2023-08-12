@@ -72,9 +72,7 @@ app.get('/api/v1/instance', (req, res) => {
         description: 'A lazy bridge to Twitter',
         email: 'example@example.com',
         version: '0.0.1',
-        urls: {
-            streaming_api: ''
-        },
+        urls: {},
         stats: {
             user_count: 1,
             status_count: 99999,
