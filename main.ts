@@ -314,11 +314,7 @@ app.get('/api/v1/favourites', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/xUGO-xGK_bD7TWpW2des6Q/FavoritesByTimeTimelineV2', variables, features);
     const response = await twreq.json();
-    const toots = response.data.user_result.result.timeline_response.timeline.instructions
-      .find((i) => i['__typename'] === 'TimelineAddEntries')
-      .entries
-      .map((e) => graphQLTweetResultToToot(e.content.content?.tweetResult.result))
-      .filter((t) => !!t);
+    const toots = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions);
     res.send(toots);
 });
 
@@ -337,11 +333,7 @@ app.get('/api/v1/bookmarks', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/E-Rqts_gtMp60KgQK2Xv9A/BookmarkTimelineV2', variables, features);
     const response = await twreq.json();
-    const toots = response.data.timeline_response.timeline.instructions
-      .find((i) => i['__typename'] === 'TimelineAddEntries')
-      .entries
-      .map((e) => graphQLTweetResultToToot(e.content.content?.tweetResult.result))
-      .filter((t) => !!t);
+    const toots = timelineInstructionsToToots(response.data.timeline_response.timeline.instructions);
     res.send(toots);
 });
 
@@ -518,13 +510,9 @@ app.get('/api/v1/statuses/:id(\\d+)/reblogged_by', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL(`/qYfITpqIDKrPUwJjledDqw/RetweetersTimeline`, variables, features);
     const response = await twreq.json();
-    const users = response.data.timeline_response.timeline.instructions
-      .find((i) => i['__typename'] === 'TimelineAddEntries')
-      .entries
-      .map((e) => e.content.content?.userResult.result.legacy)
-      .filter((u) => !!u);
+    const users = timelineInstructionsToAccounts(response.data.timeline_response.timeline.instructions);
     if (twreq.status === 200) {
-        res.send(users.map(userToAccount));
+        res.send(users);
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
@@ -577,13 +565,9 @@ app.get('/api/v1/accounts/familiar_followers', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL(`/Mj1OuwJog0E8Wo1JKf0zbg/UserFriendsFollowingTimelineQuery`, params.variables, params.features);
     const response = await twreq.json();
-    const users = response.data.user.timeline_response.timeline.instructions
-      .find((i) => i['__typename'] === 'TimelineAddEntries')
-      .entries
-      .map((e) => e.content.content?.userResult.result.legacy)
-      .filter((u) => !!u);
+    const users = timelineInstructionsToAccounts(response.data.user.timeline_response.timeline.instructions);
     if (twreq.status === 200) {
-        res.send(users.map(userToAccount));
+        res.send(users);
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
