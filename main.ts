@@ -882,24 +882,39 @@ app.post('/api/v1/statuses/:id(\\d+)/unfavourite', async (req, res) => {
 });
 
 app.post('/api/v1/statuses/:id(\\d+)/reblog', async (req, res) => {
-    const params = buildParams(true);
-    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/statuses/retweet/${req.params.id}.json`, params);
-    const tweet = await twreq.json();
+    const variables = {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "tweet_id": req.params.id,
+        "includeEditControl": true,
+        "includeTweetVisibilityNudge": true
+    };
+    const twreq = await req.oauth!.postGraphQL(`/JEZIa5OfTnyblbLkht1UNg/CreateRetweet`, variables);
+    const response = await twreq.json();
     if (twreq.status === 200) {
-        res.send(tweetToToot(tweet));
+        res.send(graphQLTweetResultToToot(response.data.create_retweet.tweet_result.result));
     } else {
-        res.status(twreq.status).send({error: JSON.stringify(tweet)});
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
 });
 
 app.post('/api/v1/statuses/:id(\\d+)/unreblog', async (req, res) => {
-    const params = buildParams(true);
-    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/statuses/unretweet/${req.params.id}.json`, params);
-    const tweet = await twreq.json();
+    const variables = {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "source_tweet_id": req.params.id,
+        "includeEditControl": true,
+    };
+    const twreq = await req.oauth!.postGraphQL(`/r1IaAd_GIEunlPjVWVlD_w/DeleteRetweet`, variables);
+    const response = await twreq.json();
     if (twreq.status === 200) {
-        res.send(tweetToToot(tweet));
+        // TODO: send back a result with the tweet contents, as per https://docs.joinmastodon.org/methods/statuses/#200-ok-10.
+        // Ivory doesn't mind not getting a tweet back, but other clients might - this is not to spec!
+        res.send({});
     } else {
-        res.status(twreq.status).send({error: JSON.stringify(tweet)});
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
 });
 
