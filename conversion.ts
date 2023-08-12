@@ -305,13 +305,23 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
     if (tweet.user === undefined && globalObjects?.users)
         tweet.user = globalObjects.users[tweet.user_id_str];
 
+    const sensitiveMediaWarnings = tweet?.extended_entities?.media
+        ?.flatMap((m) => Object.keys(m?.sensitive_media_warning ?? {}))
+        // Remove dupes
+        ?.filter((value, index, array) => array.indexOf(value) === index && value !== 'other')
+        // Crudely format the key to something nice
+        ?.map((k: string) => {
+            const spacedKey = k.replace('_', ' ');
+            return `${spacedKey[0].toUpperCase()}${spacedKey.slice(1)}`;
+        });
+
     toot.id = tweet.id_str;
     toot.uri = `https://twitter.com/${encodeURIComponent(tweet.user.screen_name)}/status/${encodeURIComponent(tweet.id_str)}`;
     toot.created_at = convertTimestamp(tweet.created_at);
     toot.account = userToAccount(tweet.user);
     toot.visibility = tweet.user.protected ? 'private' : 'public';
-    toot.sensitive = false;
-    toot.spoiler_text = '';
+    toot.sensitive = tweet.possibly_sensitive ?? false;
+    toot.spoiler_text = sensitiveMediaWarnings?.length > 0 ? sensitiveMediaWarnings.join(', ') : '';
     toot.media_attachments = [];
     toot.application = convertTweetSource(tweet.source);
     if (tweet.retweeted_status !== undefined) {
