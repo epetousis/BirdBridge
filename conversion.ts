@@ -222,6 +222,9 @@ export function convertCard(card: Record<string, any>, extendedEntities: any): R
         const options = [];
         let totalVotes = 0;
         for (let i = 1; i <= optionCount; i++) {
+            if (!card.binding_values[`choice${i}_count`]) {
+                throw new Error(`Was given poll with ${optionCount} options, but option ${i} is missing`);
+            }
             const votes = parseInt(card.binding_values[`choice${i}_count`].string_value, 10);
             options.push({
                 title: card.binding_values[`choice${i}_label`].string_value,
