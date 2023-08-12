@@ -605,29 +605,65 @@ app.post('/api/v1/accounts/:id(\\d+)/unfollow', async (req, res) => {
 app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const id = BigInt(req.params.id as string);
 
-    const params = buildParams(true);
-    const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${id.toString()}.json`, params);
-    const conversation = await twreq.json();
-    if ('errors' in conversation && conversation.errors.some((e) => e.code === 34)) {
+    const variables = {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "isReaderMode": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "focalTweetId": req.params.id,
+        "includeCommunityTweetRelationship": true,
+        "includeTweetVisibilityNudge": true
+    };
+    const features = {
+        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": true,
+    };
+    const twreq = await req.oauth!.getGraphQL(`/nDLClSQMkXj5sp4n4qjFtg/ConversationTimelineV2`, variables, features);
+    const response = await twreq.json();
+    if ('errors' in response && response.errors.some((e) => e.code === 34)) {
         // Code 34 === tweet does not exist. Respond accordingly.
         res.status(404).send({error: 'Record not found'});
         return;
     }
 
-    const ancestors = [];
-    const descendants = [];
+    const ancestors: Record<string, any> = [];
+    const descendants: Record<string, any> = [];
 
-    const requestedStatus = conversation.globalObjects.tweets[req.params.id];
+    let [requestedStatuses, nextCursor] = timelineInstructionsToToots(response.data.timeline_response.instructions);
+    const requestedStatus = requestedStatuses.find((t) => t.id === req.params.id);
 
-    for (const obj of Object.values(conversation.globalObjects.tweets)) {
+    // Fetch additional pages of context
+    // The real Mastodon endpoint is supposed to return up to 4096 ancestors and descendants *each*.
+    // That's not feasible for us to replicate here. Until the endpoint gets pagination, this is
+    // the best we can do.
+    let newToots: Record<string, any>[] = [];
+    let i = 0;
+    // NB: setting this env variable too high will result in the endpoint taking a very, very long time to load!
+    // In addition, there is an Ivory bug that results in this request being fired off twice. Expect twice the amount
+    // of pagination requests.
+    const contextPageLimit = Deno.env.get('BIRDBRIDGE_MAX_CONTEXT_PAGES') ?? 1;
+    while (nextCursor && i < contextPageLimit) {
+        console.log(`Fetching additional context page ${i + 1}/${contextPageLimit}`);
+        variables.cursor = nextCursor;
+        const twreq = await req.oauth!.getGraphQL(`/nDLClSQMkXj5sp4n4qjFtg/ConversationTimelineV2`, variables, features);
+        const response = await twreq.json();
+        [newToots, nextCursor] = timelineInstructionsToToots(response.data.timeline_response.instructions);
+        requestedStatuses.push(...newToots);
+        i++;
+    }
+    if (i < contextPageLimit) {
+        console.log('Ran out of tweets to fetch before reaching context page limit.');
+    }
+
+    Object.values(requestedStatuses).forEach((obj) => {
         const tweet = obj as Record<string, any>;
-        const checkID = BigInt(tweet.id_str);
+        const checkID = BigInt(tweet.id);
         const isPartOfThisConversation = tweet.conversation_id === requestedStatus.conversation_id;
         if (checkID < id && isPartOfThisConversation)
-            ancestors.push(tweetToToot(tweet, conversation.globalObjects));
+            ancestors.push(tweet);
         else if (checkID > id)
-            descendants.push(tweetToToot(tweet, conversation.globalObjects));
-    }
+            descendants.push(tweet);
+    });
 
     ancestors.sort((a, b) => {
         const aID = BigInt(a.id);
