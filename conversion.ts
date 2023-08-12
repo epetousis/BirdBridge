@@ -407,7 +407,12 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
 export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
     if (!tweetResult || !tweetResult.legacy || !tweetResult.core || !tweetResult.rest_id) return undefined;
 
-    const tweet = tweetResult.legacy;
+    const tweet = {...tweetResult.legacy};
+    if (tweetResult?.note_tweet?.note_tweet_results?.result?.text) {
+        // If the tweet has text longer than 120 characters, we need to pull the full text from note_tweet.
+        tweet.full_text = tweetResult.note_tweet.note_tweet_results.result.text;
+        tweet.entities = tweetResult.note_tweet.note_tweet_results.result.entity_set.urls;
+    }
     tweet.user = tweetResult.core.user_result.result.legacy;
     // Having weird issues with your client? You might have forgotten to include the tweet ID.
     tweet.id_str = tweetResult.rest_id;
