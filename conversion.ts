@@ -435,6 +435,8 @@ export function timelineInstructionsToToots(instructions: any[]): [toots: Record
     }
 
     return [addEntries
+        // Make sure to filter out anything from the "related tweets" widget
+        .filter((e) => e.content.clientEventInfo?.component !== 'related_tweet')
         .flatMap((e) => [
             ...(e.content.items
             ? e.content.items.map((item) => graphQLTweetResultToToot(item.item.content?.tweetResult?.result))
