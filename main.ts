@@ -448,20 +448,26 @@ app.get('/api/v1/accounts/relationships', async (req, res) => {
 });
 
 app.get('/api/v1/statuses/:id(\\d+)', async (req, res) => {
-    const params = buildParams(true);
-    params.id = req.params.id;
-    const twreq = await req.oauth!.request('GET', `https://api.twitter.com/2/timeline/conversation/${params.id}.json`, params);
-    const conversation = await twreq.json();
-    if ('errors' in conversation && conversation.errors.some((e) => e.code === 34)) {
+    const variables = {
+        "includeTweetImpression":true,
+        "includeHasBirdwatchNotes":false,
+        "includeEditPerspective":false,
+        "includeEditControl":true,
+        "includeCommunityTweetRelationship":true,
+        "rest_id":req.params.id,
+        "includeTweetVisibilityNudge":true,
+    };
+    const twreq = await req.oauth!.getGraphQL(`/2hxSMXGNMNIocZb8pUn9bQ/TweetResultByIdQuery`, variables);
+    const response = await twreq.json();
+    if ('errors' in response && response.errors.some((e) => e.code === 34)) {
         // Code 34 === tweet does not exist. Respond accordingly.
         res.status(404).send({error: 'Record not found'});
         return;
     }
-    const tweet = conversation.globalObjects.tweets[params.id];
-    if (twreq.status === 200) {
-        res.send(tweetToToot(tweet, conversation.globalObjects));
+    if (twreq.status === 200 && !response.errors) {
+        res.send(graphQLTweetResultToToot(response.data.tweet_result.result));
     } else {
-        res.status(twreq.status).send({error: JSON.stringify(conversation.errors)});
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
 });
 
@@ -479,13 +485,9 @@ app.get('/api/v1/statuses/:id(\\d+)/favourited_by', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL(`/098IQ5T4TeTVlwtaRQh7Rw/FavoritersTimeline`, variables, features);
     const response = await twreq.json();
-    const users = response.data.timeline_response.timeline.instructions
-      .find((i) => i['__typename'] === 'TimelineAddEntries')
-      .entries
-      .map((e) => e.content.content?.userResult.result.legacy)
-      .filter((u) => !!u);
+    const users = timelineInstructionsToAccounts(response.data.timeline_response.timeline.instructions);
     if (twreq.status === 200) {
-        res.send(users.map(userToAccount));
+        res.send(users);
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
