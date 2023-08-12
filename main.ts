@@ -115,7 +115,14 @@ app.get('/api/v1/accounts/verify_credentials', async (req, res) => {
     const account = userToAccount(user);
     account.source = {
         privacy: user.protected ? 'private' : 'public',
-        note: user.description
+        note: user.description,
+        // TODO: implement
+        sensitive: false,
+        // TODO: implement
+        language: 'en',
+        // TODO: implement
+        followRequestsCount: 0,
+        fields: [],
     };
 
     res.send(account);
@@ -973,6 +980,10 @@ app.get('/api/v1/accounts/search', async (req, res) => {
 
 app.post('/api/v1/polls/:id(\\d+)/votes', async (req, res) => {
     res.status(500).send({error: 'Polls are not yet supported. Please vote in the Twitter app.'});
+});
+
+app.get('/missing.png', async (req, res) => {
+    res.status(200).send('');
 });
 
 app.listen(8000);

@@ -133,8 +133,8 @@ export function userToAccount(user: Record<string, any>): Record<string, any> {
     account.avatar_static = account.avatar;
     // TODO make this point to something useful
     // Pinafore just expects to see missing.png
-    account.header = user.profile_banner_url || 'missing.png';
-    account.header_static = user.profile_banner_url || 'missing.png';
+    account.header = user.profile_banner_url || `${CONFIG.root}/missing.png`;
+    account.header_static = user.profile_banner_url || `${CONFIG.root}/missing.png`;
     account.locked = user.protected;
     // fields, bot?
     account.created_at = convertTimestamp(user.created_at);
@@ -144,6 +144,9 @@ export function userToAccount(user: Record<string, any>): Record<string, any> {
     account.followers_count = user.followers_count;
     account.following_count = user.friends_count;
     account.emojis = [];
+    account.fields = [];
+    // TODO: implement
+    account.bot = false;
 
     if (user.ext_is_blue_verified) {
         account.emojis.push(BLUE_VERIFIED_EMOJI);
@@ -413,6 +416,10 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
         const whomst = tweet.ext_trusted_friends_metadata?.metadata?.owner_screen_name || '???';
         toot.spoiler_text = `🔵 ${whomst}'s circle`;
     }
+
+    toot.emojis = [];
+    // TODO: implement
+    toot.mentions = [];
 
     return toot;
 }
