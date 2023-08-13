@@ -490,12 +490,12 @@ export function timelineInstructionsToToots(instructions: any[], pinned?: boolea
         .filter((t) => !!t), nextCursor];
 };
 
-export function timelineInstructionsToAccounts(instructions: any[]): Record<string, any> | null {
+export function timelineInstructionsToAccounts(instructions: any[]): Record<string, any>[] {
     return instructions
         .find((i) => i['__typename'] === 'TimelineAddEntries')
         ?.entries
         ?.map((e) => userToAccount(e.content.content?.userResult.result.legacy))
-        ?.filter((u) => !!u) ?? null;
+        ?.filter((u) => !!u) ?? [];
 };
 
 export function activityToNotification(activity: Record<string, any>): Record<string, any> | null {
