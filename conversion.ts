@@ -428,6 +428,8 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
 export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
     if (!tweetResult || !tweetResult.legacy || !tweetResult.core || !tweetResult.rest_id) return undefined;
 
+    // Here, we transform the GraphQL result into a tweet object that looks like the REST API result.
+
     const tweet = {...tweetResult.legacy};
     if (tweetResult?.note_tweet?.note_tweet_results?.result?.text) {
         // If the tweet has text longer than 120 characters, we need to pull the full text from note_tweet.
@@ -437,6 +439,18 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
     tweet.user = tweetResult.core.user_result.result.legacy;
     // Having weird issues with your client? You might have forgotten to include the tweet ID.
     tweet.id_str = tweetResult.rest_id;
+
+    // Transform quoted statuses
+    if (tweetResult.quoted_status_result) {
+        // If we were provided with a result of __typename === TweetWithVisibilityResults, make sure to pull the quoted status from it.
+        const quoteStatusResult = tweetResult.quoted_status_result.result.tweet
+          ?? tweetResult.quoted_status_result.result;
+        tweet.quoted_status = quoteStatusResult;
+        tweet.quoted_status.user = quoteStatusResult.core.user_result.result.legacy;
+        tweet.quoted_status.id_str = quoteStatusResult.rest_id;
+        tweet.quoted_status_permalink = {};
+        tweet.quoted_status_permalink.expanded = `https://twitter.com/${quoteStatusResult.core.user_result.result.legacy.screen_name}/status/${quoteStatusResult.rest_id}`;
+    }
     return tweetToToot(tweet);
 }
 
