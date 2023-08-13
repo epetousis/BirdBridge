@@ -651,7 +651,7 @@ app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     // NB: setting this env variable too high will result in the endpoint taking a very, very long time to load!
     // In addition, there is an Ivory bug that results in this request being fired off twice. Expect twice the amount
     // of pagination requests.
-    const contextPageLimit = Deno.env.get('BIRDBRIDGE_MAX_CONTEXT_PAGES') ?? 1;
+    const contextPageLimit = CONFIG.max_context_pages ?? 1;
     while (nextCursor && i < contextPageLimit) {
         console.log(`Fetching additional context page ${i + 1}/${contextPageLimit}`);
         variables.cursor = nextCursor;

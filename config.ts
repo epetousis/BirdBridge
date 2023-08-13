@@ -4,6 +4,7 @@ export interface Config {
     bridge_secret: string,
     consumer_key: string,
     consumer_secret: string,
+    max_context_pages?: number,
     root: string,
     domain: string
 }
