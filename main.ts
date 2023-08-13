@@ -214,7 +214,7 @@ app.get('/api/v1/timelines/home', async (req, res) => {
         tweets = await twreq.json();
     }
 
-    const toots = tweets.map(tweetToToot);
+    const toots = tweets.map((t) => tweetToToot(t));
     addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
     res.send(toots);
 });
@@ -364,7 +364,7 @@ app.get('/api/v1/timelines/list/:list_id(\\d+)', async (req, res) => {
 
     const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/lists/statuses.json', params);
     const tweets = await twreq.json();
-    const toots = tweets.map(tweetToToot);
+    const toots = tweets.map((t) => tweetToToot(t));
     addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
     res.send(toots);
 });
@@ -540,7 +540,7 @@ app.get('/api/v1/accounts/:id(\\d+)/followers', async (req, res) => {
     const response = await twreq.json();
     const users = response.users;
     if (twreq.status === 200) {
-        res.send(users.map(userToAccount));
+        res.send(users.map((u) => userToAccount(u)));
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
@@ -555,7 +555,7 @@ app.get('/api/v1/accounts/:id(\\d+)/following', async (req, res) => {
     const response = await twreq.json();
     const users = response.users;
     if (twreq.status === 200) {
-        res.send(users.map(userToAccount));
+        res.send(users.map((u) => userToAccount(u)));
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
@@ -732,7 +732,7 @@ app.get('/api/v2/search', async (req, res) => {
         let tweets;
         tweets = await twreq.json();
         tweets = tweets.statuses;
-        const toots = tweets.map(tweetToToot);
+        const toots = tweets.map((t) => tweetToToot(t));
         addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
         res.send({accounts: [], hashtags: [], statuses: toots});
         return;
@@ -753,7 +753,7 @@ app.get('/api/v1/timelines/tag/*', async (req, res) => {
     let tweets;
     tweets = await twreq.json();
     tweets = tweets.statuses;
-    const toots = tweets.map(tweetToToot);
+    const toots = tweets.map((t) => tweetToToot(t));
     addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
     res.send(toots);
 });
@@ -975,7 +975,7 @@ app.get('/api/v1/accounts/search', async (req, res) => {
         const accReq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/users/search.json', params);
         let accounts;
         accounts = await accReq.json();
-        accounts = accounts.map(userToAccount);
+        accounts = accounts.map((u) => userToAccount(u));
         addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), accounts as {id: string}[], res);
         res.send(accounts);
     }
