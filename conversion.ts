@@ -308,7 +308,7 @@ function convertTweetSource(source: string): Record<string, string> | null {
     }
 }
 
-export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Record<string, any> {
+export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, limitedReplies?: boolean): Record<string, any> {
     const toot: Record<string, any> = {};
 
     if (tweet.user === undefined && globalObjects?.users)
@@ -322,7 +322,12 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
         ?.map((k: string) => {
             const spacedKey = k.replace('_', ' ');
             return `${spacedKey[0].toUpperCase()}${spacedKey.slice(1)}`;
-        });
+        }) ?? [];
+
+    const spoilerTextComponents = [...sensitiveMediaWarnings];
+    if (limitedReplies) {
+        spoilerTextComponents.push('Limited replies');
+    }
 
     toot.id = tweet.id_str;
     toot.uri = `https://twitter.com/${encodeURIComponent(tweet.user.screen_name)}/status/${encodeURIComponent(tweet.id_str)}`;
@@ -330,7 +335,7 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
     toot.account = userToAccount(tweet.user);
     toot.visibility = tweet.user.protected ? 'private' : 'public';
     toot.sensitive = tweet.possibly_sensitive ?? false;
-    toot.spoiler_text = sensitiveMediaWarnings?.length > 0 ? sensitiveMediaWarnings.join(', ') : '';
+    toot.spoiler_text = spoilerTextComponents.join(', ');
     toot.media_attachments = [];
     toot.application = convertTweetSource(tweet.source);
     if (tweet.retweeted_status !== undefined) {
@@ -430,8 +435,12 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
     return toot;
 }
 
-export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
+export function graphQLTweetResultToToot(potentialTweetResult: Record<string, any>) {
+    // If we were provided with a result of __typename === TweetWithVisibilityResults, make sure to pull the real result from it.
+    const tweetResult = potentialTweetResult?.tweet ?? potentialTweetResult;
     if (!tweetResult || !tweetResult.legacy || !tweetResult.core || !tweetResult.rest_id) return undefined;
+
+    const limitedRepliesTweet = potentialTweetResult.__typename === 'TweetWithVisibilityResults';
 
     // Here, we transform the GraphQL result into a tweet object that looks like the REST API result.
 
@@ -465,7 +474,7 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
         tweet.retweeted_status.user = retweetResult.core.user_result.result.legacy;
         tweet.retweeted_status.id_str = retweetResult.rest_id;
     }
-    return tweetToToot(tweet);
+    return tweetToToot(tweet, undefined, limitedRepliesTweet);
 }
 
 export function graphQLUserToAccount(userResult: Record<string, any>) {
