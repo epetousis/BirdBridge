@@ -55,6 +55,11 @@ export function convertFormattedText(text: string, entities: Record<string, any[
             list.push(o);
         }
     }
+    if (entities.media) {
+        for (const o of entities.media) {
+            list.push(o);
+        }
+    }
     // a fake 'end' entity
     list.push({type: 'end', indices: [display_text_range[1], display_text_range[1]]});
 
@@ -352,7 +357,7 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any): Re
         toot.replies_count = tweet.reply_count;
         toot.reblogs_count = tweet.retweet_count;
         toot.favourites_count = tweet.favorite_count;
-        const conv = convertFormattedText(tweet.full_text, tweet.entities, tweet.display_text_range);
+        const conv = convertFormattedText(tweet.full_text, {...tweet.entities, ...tweet.extended_entities}, tweet.display_text_range);
         toot.content = conv.content;
         toot.mentions = conv.mentions;
         toot.tags = conv.tags;
