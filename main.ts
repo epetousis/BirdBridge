@@ -314,7 +314,7 @@ app.get('/api/v1/favourites', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/xUGO-xGK_bD7TWpW2des6Q/FavoritesByTimeTimelineV2', variables, features);
     const response = await twreq.json();
-    const toots = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions);
+    const [toots] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions);
     res.send(toots);
 });
 
@@ -333,7 +333,7 @@ app.get('/api/v1/bookmarks', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/E-Rqts_gtMp60KgQK2Xv9A/BookmarkTimelineV2', variables, features);
     const response = await twreq.json();
-    const toots = timelineInstructionsToToots(response.data.timeline_response.timeline.instructions);
+    const [toots] = timelineInstructionsToToots(response.data.timeline_response.timeline.instructions);
     res.send(toots);
 });
 
