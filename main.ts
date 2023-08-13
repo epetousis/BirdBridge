@@ -837,12 +837,15 @@ app.post('/api/v1/statuses', async (req, res) => {
     }
 
     const twreq = await req.oauth!.postGraphQL('/f4fzP-emDqiJatuGuzfApg/CreateTweet', params.variables);
-    const data = (await twreq.json()).data;
-    if (twreq.status === 200) {
-        res.send(graphQLTweetResultToToot(data.create_tweet.tweet_result.result));
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send(graphQLTweetResultToToot(response.data.create_tweet.tweet_result.result));
     } else {
         // TODO: better/more consistent handling of errors...
-        res.status(twreq.status).send({error: data.message});
+        if (response.errors[0].code === 433) {
+            res.status(403).send({ error: 'The original Tweet author restricted who can reply to this Tweet. You are not permitted to reply.' });
+        }
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
 });
 
