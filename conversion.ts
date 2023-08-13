@@ -308,7 +308,7 @@ function convertTweetSource(source: string): Record<string, string> | null {
     }
 }
 
-export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, limitedReplies?: boolean): Record<string, any> {
+export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, extraMetadata?: { limitedReplies?: boolean, quoteTweetDeleted?: boolean }): Record<string, any> {
     const toot: Record<string, any> = {};
 
     if (tweet.user === undefined && globalObjects?.users)
@@ -325,7 +325,7 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, lim
         }) ?? [];
 
     const spoilerTextComponents = [...sensitiveMediaWarnings];
-    if (limitedReplies) {
+    if (extraMetadata?.limitedReplies) {
         spoilerTextComponents.push('Limited replies');
     }
 
@@ -432,6 +432,11 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, lim
     // TODO: implement
     toot.mentions = [];
 
+    if (extraMetadata?.quoteTweetDeleted) {
+        toot.content += '\n\n[Quote tweet has been deleted]';
+        toot.text += '\n\n[Quote tweet has been deleted]';
+    }
+
     return toot;
 }
 
@@ -458,15 +463,21 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
     tweet.id_str = tweetResult.rest_id;
 
     // Transform quoted statuses
-    if (tweetResult.quoted_status_result) {
+    let quoteTweetDeleted = false;
+    const quoteTweetIsAvailable = tweetResult.quoted_status_result && tweetResult.quoted_status_result.result.__typename !== 'TweetTombstone';
+    if (tweetResult.quoted_status_result
+        && quoteTweetIsAvailable) {
         // If we were provided with a result of __typename === TweetWithVisibilityResults, make sure to pull the quoted status from it.
         const quoteStatusResult = tweetResult.quoted_status_result.result.tweet
           ?? tweetResult.quoted_status_result.result;
         tweet.quoted_status = quoteStatusResult.legacy;
-        tweet.quoted_status.user = quoteStatusResult.core.user_result.result.legacy;
+        tweet.quoted_status.user = quoteStatusResult.core?.user_result.result.legacy;
         tweet.quoted_status.id_str = quoteStatusResult.rest_id;
         tweet.quoted_status_permalink = {};
         tweet.quoted_status_permalink.expanded = `https://twitter.com/${quoteStatusResult.core.user_result.result.legacy.screen_name}/status/${quoteStatusResult.rest_id}`;
+    } else if (tweetResult.legacy.is_quote_status && !quoteTweetIsAvailable) {
+        // If we haven't been given a quoted_status_result, but the tweet is a quote tweet, the QT's probably been deleted.
+        quoteTweetDeleted = true;
     }
     // Transform retweets
     if (tweetResult.legacy.retweeted_status_result) {
@@ -477,7 +488,7 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
         tweet.retweeted_status.user = retweetResult.core.user_result.result.legacy;
         tweet.retweeted_status.id_str = retweetResult.rest_id;
     }
-    return tweetToToot(tweet, undefined, limitedRepliesTweet);
+    return tweetToToot(tweet, undefined, { limitedReplies: limitedRepliesTweet, quoteTweetDeleted });
 }
 
 export function graphQLUserToAccount(userResult: Record<string, any>) {
