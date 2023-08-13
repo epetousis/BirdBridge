@@ -1,30 +1,7 @@
 // @deno-types="npm:@types/express@4.17.15"
 import express from "npm:express@4.18.2";
-import {CONFIG} from "../config.ts";
-
-export const BLUE_VERIFIED_EMOJI = {
-    shortcode: 'blue_verified',
-    url: new URL('/static/blue_verified.png', CONFIG.root).toString(),
-    static_url: new URL('/static/blue_verified.png', CONFIG.root).toString(),
-    visible_in_picker: false,
-    category: 'Icons'
-};
-export const VERIFIED_EMOJI = {
-    shortcode: 'verified',
-    url: new URL('/static/verified.png', CONFIG.root).toString(),
-    static_url: new URL('/static/verified.png', CONFIG.root).toString(),
-    visible_in_picker: false,
-    category: 'Icons'
-};
-export const PISS_VERIFIED_EMOJI = {
-    shortcode: 'piss_verified',
-    url: new URL('/static/piss_verified.png', CONFIG.root).toString(),
-    static_url: new URL('/static/piss_verified.png', CONFIG.root).toString(),
-    visible_in_picker: false,
-    category: 'Icons'
-};
-
-export const IMAGE_1PX = new URL('/static/1px.png', CONFIG.root).toString();
+import { OAuth } from "./oauth.ts";
+import { graphQLTweetResultToToot } from "../conversion.ts";
 
 export function buildParams(isTweet: boolean): Record<string, any> {
     const params: Record<string, any> = {
@@ -86,3 +63,22 @@ export function addPageLinksToResponse(url: URL, items: {id: string}[], response
 
     response.header('Link', `<${prevURL}>; rel="prev", <${nextURL}>; rel="next"`);
 }
+
+/** Get a tweet and convert it to a Mastodon post. */
+export async function getTweetAsToot(oauthContext: OAuth, id: string): Promise<Record<string, any> | string | undefined> {
+    const variables = {
+        "includeTweetImpression":true,
+        "includeHasBirdwatchNotes":false,
+        "includeEditPerspective":false,
+        "includeEditControl":true,
+        "includeCommunityTweetRelationship":true,
+        "rest_id":id,
+        "includeTweetVisibilityNudge":true,
+    };
+    const twreq = await oauthContext.getGraphQL(`/2hxSMXGNMNIocZb8pUn9bQ/TweetResultByIdQuery`, variables);
+    const response = await twreq.json();
+    if (response.errors) {
+        return response.errors[0].message;
+    }
+    return graphQLTweetResultToToot(response.data.tweet_result.result);
+};

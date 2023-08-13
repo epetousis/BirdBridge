@@ -7,11 +7,15 @@ import {userToAccount, tweetToToot, activityToNotification, graphQLTweetResultTo
 import {OAuth} from "./utils/oauth.ts";
 import {
     addPageLinksToResponse,
-    BLUE_VERIFIED_EMOJI,
     buildParams,
     injectPagingInfo,
     PISS_VERIFIED_EMOJI, VERIFIED_EMOJI
 } from "./utils/apiUtil.ts";
+import {
+    BLUE_VERIFIED_EMOJI,
+    PISS_VERIFIED_EMOJI,
+    VERIFIED_EMOJI,
+} from "./utils/assets.ts";
 import {UserCache} from "./utils/userCache.ts";
 import {CONFIG} from "./config.ts";
 import {setup as setupAuthflow} from "./apis/authflow.ts";

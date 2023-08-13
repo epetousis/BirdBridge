@@ -1,6 +1,6 @@
 import twitter from "npm:twitter-text@3.1.0";
 import { CONFIG } from "./config.ts";
-import {BLUE_VERIFIED_EMOJI, IMAGE_1PX, PISS_VERIFIED_EMOJI, VERIFIED_EMOJI} from "./utils/apiUtil.ts";
+import {BLUE_VERIFIED_EMOJI, IMAGE_1PX, PISS_VERIFIED_EMOJI, VERIFIED_EMOJI} from "./utils/assets.ts";
 
 const MONTHS: Record<string, string> = {
     'Jan': '01',
