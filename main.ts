@@ -16,6 +16,8 @@ import {UserCache} from "./utils/userCache.ts";
 import {CONFIG} from "./config.ts";
 import {setup as setupAuthflow} from "./apis/authflow.ts";
 import { red } from "https://deno.land/std@0.197.0/fmt/colors.ts";
+import * as path from 'https://deno.land/std@0.102.0/path/mod.ts';
+import nodeFs from "node:fs";
 
 console.log(red('Starting BirdBridge...'));
 
@@ -49,7 +51,11 @@ app.use(express.json({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use('/static', express.static(new URL('static', import.meta.url).pathname));
+// FIXME: remove when https://github.com/denoland/deno/issues/19927 is fixed
+app.use("/static", async (req, res) => {
+    const url = req.url.split(/[?#]/)[0];
+    await nodeFs.createReadStream(path.resolve(Deno.cwd(), `static${url}`)).pipe(res);
+});
 
 app.use((req, res, next) => {
     // Inject query params into the body
