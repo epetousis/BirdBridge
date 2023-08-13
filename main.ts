@@ -425,7 +425,10 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
     }
 
     addPageLinksToResponse(new URL(req.originalUrl, CONFIG.root), toots as {id: string}[], res);
-    res.send(toots);
+    if (CONFIG.pagination_safety_buffer) {
+        console.log(`Waiting an additional ${CONFIG.pagination_safety_buffer}ms before returning this request.`);
+    }
+    setTimeout(() => res.send(toots), CONFIG.pagination_safety_buffer ?? 0);
 });
 
 app.get('/api/v1/accounts/relationships', async (req, res) => {

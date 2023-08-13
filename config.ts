@@ -5,6 +5,7 @@ export interface Config {
     consumer_key: string,
     consumer_secret: string,
     max_context_pages?: number,
+    pagination_safety_buffer?: number,
     root: string,
     domain: string
 }

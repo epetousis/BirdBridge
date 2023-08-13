@@ -13,6 +13,7 @@
   "consumer_key": "[Replace me with a valid API key]",
   "consumer_secret": "[Replace me with a valid API key secret]",
   "max_context_pages": 1,
+  "pagination_safety_buffer": 500,
   "root": "https://cool-subdomain.example.com",
   "domain": "cool-subdomain.example.com"
 }
