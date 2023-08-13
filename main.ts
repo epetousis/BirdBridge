@@ -982,9 +982,11 @@ app.post('/api/v1/statuses/:id(\\d+)/unreblog', async (req, res) => {
     const twreq = await req.oauth!.postGraphQL(`/r1IaAd_GIEunlPjVWVlD_w/DeleteRetweet`, variables);
     const response = await twreq.json();
     if (twreq.status === 200) {
-        // TODO: send back a result with the tweet contents, as per https://docs.joinmastodon.org/methods/statuses/#200-ok-10.
-        // Ivory doesn't mind not getting a tweet back, but other clients might - this is not to spec!
-        res.send({});
+        const tootResponse = await getTweetAsToot(req.oauth!, req.params.id);
+        if (typeof tootResponse === 'string') {
+            res.status(500).send({error: tootResponse});
+        }
+        res.send(tootResponse);
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
