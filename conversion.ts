@@ -450,7 +450,7 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
         // If we were provided with a result of __typename === TweetWithVisibilityResults, make sure to pull the quoted status from it.
         const quoteStatusResult = tweetResult.quoted_status_result.result.tweet
           ?? tweetResult.quoted_status_result.result;
-        tweet.quoted_status = quoteStatusResult;
+        tweet.quoted_status = quoteStatusResult.legacy;
         tweet.quoted_status.user = quoteStatusResult.core.user_result.result.legacy;
         tweet.quoted_status.id_str = quoteStatusResult.rest_id;
         tweet.quoted_status_permalink = {};
