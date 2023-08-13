@@ -456,6 +456,15 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
         tweet.quoted_status_permalink = {};
         tweet.quoted_status_permalink.expanded = `https://twitter.com/${quoteStatusResult.core.user_result.result.legacy.screen_name}/status/${quoteStatusResult.rest_id}`;
     }
+    // Transform retweets
+    if (tweetResult.legacy.retweeted_status_result) {
+        // If we were provided with a result of __typename === TweetWithVisibilityResults, make sure to pull the retweeted status from it.
+        const retweetResult = tweetResult.legacy.retweeted_status_result.result.tweet
+          ?? tweetResult.legacy.retweeted_status_result.result;
+        tweet.retweeted_status = retweetResult.legacy;
+        tweet.retweeted_status.user = retweetResult.core.user_result.result.legacy;
+        tweet.retweeted_status.id_str = retweetResult.rest_id;
+    }
     return tweetToToot(tweet);
 }
 
