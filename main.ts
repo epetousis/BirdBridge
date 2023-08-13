@@ -821,6 +821,9 @@ app.post('/api/v1/statuses', async (req, res) => {
         // Let's not set this for now because Ivory seems to include the @ name in the toot
         //params.auto_populate_reply_metadata = 'true';
         params.variables.reply = {"exclude_reply_user_ids":[],"in_reply_to_tweet_id":reply_target};
+        if (req.body.visibility !== 'public') {
+            res.status(400).send({error: 'You cannot make a reply to a tweet followers only. Please set to public and try again.'});
+        }
     }
 
     if (req.body.visibility === 'direct') {
