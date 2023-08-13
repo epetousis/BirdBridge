@@ -414,6 +414,7 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, ext
     }
     toot.favourited = tweet.favorited;
     toot.reblogged = tweet.retweeted;
+    toot.bookmarked = tweet.bookmarked;
 
     if (tweet.card) {
         const conv = convertCard(tweet.card, tweet.entities);

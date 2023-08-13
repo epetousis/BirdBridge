@@ -544,6 +544,42 @@ app.get('/api/v1/statuses/:id(\\d+)/reblogged_by', async (req, res) => {
     }
 });
 
+app.post('/api/v1/statuses/:id(\\d+)/bookmark', async (req, res) => {
+    const variables = {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "tweet_id": req.params.id,
+        "includeEditControl": true
+    };
+    const twreq = await req.oauth!.postGraphQL(`/-V21wukAaCGXHbUZPZ2wGw/BookmarkAdd`, variables);
+    const response = await twreq.json();
+    if (twreq.status === 200 && response.data.tweet_bookmark_put === 'Done' && !response.errors) {
+        // TODO: return bookmarked status
+        res.send({});
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+});
+
+app.post('/api/v1/statuses/:id(\\d+)/unbookmark', async (req, res) => {
+    const variables = {
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "tweet_id": req.params.id,
+        "includeEditControl": true
+    };
+    const twreq = await req.oauth!.postGraphQL(`/G-V_AGDp-QKivnyTUCtTjA/BookmarkDelete`, variables);
+    const response = await twreq.json();
+    if (twreq.status === 200 && response.data.tweet_bookmark_delete === 'Done' && !response.errors) {
+        // TODO: return unbookmarked status
+        res.send({});
+    } else {
+        res.status(twreq.status).send({error: JSON.stringify(response.errors)});
+    }
+});
+
 app.get('/api/v1/accounts/:id(\\d+)/followers', async (req, res) => {
     const params = buildParams(true);
     params.user_id = req.params.id;
