@@ -475,6 +475,7 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
         tweet.quoted_status.id_str = quoteStatusResult.rest_id;
         tweet.quoted_status_permalink = {};
         tweet.quoted_status_permalink.expanded = `https://twitter.com/${quoteStatusResult.core.user_result.result.legacy.screen_name}/status/${quoteStatusResult.rest_id}`;
+        tweet.quoted_status_permalink.display = tweet.quoted_status_permalink.expanded?.slice(0, 40) + '…';
     } else if (tweetResult.legacy.is_quote_status && !quoteTweetIsAvailable) {
         // If we haven't been given a quoted_status_result, but the tweet is a quote tweet, the QT's probably been deleted.
         quoteTweetDeleted = true;
