@@ -396,7 +396,10 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
 
     if (req.body.max_id && !accountStatusesNextCursors.get(cacheKey)) res.send([]);
 
-    const twreq = await req.oauth!.getGraphQL('/bulo6Tdznb4dPxWwL2iYnw/UserWithProfileTweetsQueryV2', {
+    const PROFILE_TWEETS_WITH_REPLIES_ENDPOINT = '/Tkfp8LLOl0oJPv45HU9cTA/UserWithProfileTweetsAndRepliesQueryV2';
+    const PROFILE_TWEETS_ENDPOINT = '/bulo6Tdznb4dPxWwL2iYnw/UserWithProfileTweetsQueryV2';
+
+    const twreq = await req.oauth!.getGraphQL(req.body.exclude_replies ? PROFILE_TWEETS_ENDPOINT : PROFILE_TWEETS_WITH_REPLIES_ENDPOINT, {
         "includeTweetImpression": true,
         "includeHasBirdwatchNotes": false,
         "includeEditPerspective": false,

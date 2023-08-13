@@ -524,12 +524,17 @@ export function timelineInstructionsToToots(instructions: any[], pinned?: boolea
     return [addEntries
         // Make sure to filter out anything from the "related tweets" widget
         .filter((e) => e.content.clientEventInfo?.component !== 'related_tweet')
-        .flatMap((e) => [
-            ...(e.content.items
-            ? e.content.items.map((item) => graphQLTweetResultToToot(item.item.content?.tweetResult?.result))
-            : [graphQLTweetResultToToot(e.content.content?.tweetResult?.result)])
-        ])
-        .filter((t) => !!t), nextCursor];
+        .flatMap((e) => {
+            const isConversationModule = e.content.__typename === 'TimelineTimelineModule'
+              && e.content.moduleDisplayType === 'VerticalConversation'
+              && e.content.items;
+            if (isConversationModule) {
+                // If this is a conversation "module", let's get the last reply as that is considered the focal or "main" tweet.
+                return graphQLTweetResultToToot(e.content.items[e.content.items.length - 1]?.item.content?.tweetResult?.result);
+            }
+            return graphQLTweetResultToToot(e.content.content?.tweetResult?.result);
+        })
+        .filter((t): t is Record<string, any> => !!t), nextCursor];
 };
 
 export function timelineInstructionsToAccounts(instructions: any[]): Record<string, any>[] {
