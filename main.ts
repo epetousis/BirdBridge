@@ -9,7 +9,7 @@ import {
     addPageLinksToResponse,
     buildParams,
     injectPagingInfo,
-    PISS_VERIFIED_EMOJI, VERIFIED_EMOJI
+    getTweetAsToot,
 } from "./utils/apiUtil.ts";
 import {
     BLUE_VERIFIED_EMOJI,
@@ -559,8 +559,11 @@ app.post('/api/v1/statuses/:id(\\d+)/bookmark', async (req, res) => {
     const twreq = await req.oauth!.postGraphQL(`/-V21wukAaCGXHbUZPZ2wGw/BookmarkAdd`, variables);
     const response = await twreq.json();
     if (twreq.status === 200 && response.data.tweet_bookmark_put === 'Done' && !response.errors) {
-        // TODO: return bookmarked status
-        res.send({});
+        const tootResponse = await getTweetAsToot(req.oauth!, req.params.id);
+        if (typeof tootResponse === 'string') {
+            res.status(500).send({error: tootResponse});
+        }
+        res.send(tootResponse);
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
@@ -577,8 +580,11 @@ app.post('/api/v1/statuses/:id(\\d+)/unbookmark', async (req, res) => {
     const twreq = await req.oauth!.postGraphQL(`/G-V_AGDp-QKivnyTUCtTjA/BookmarkDelete`, variables);
     const response = await twreq.json();
     if (twreq.status === 200 && response.data.tweet_bookmark_delete === 'Done' && !response.errors) {
-        // TODO: return unbookmarked status
-        res.send({});
+        const tootResponse = await getTweetAsToot(req.oauth!, req.params.id);
+        if (typeof tootResponse === 'string') {
+            res.status(500).send({error: tootResponse});
+        }
+        res.send(tootResponse);
     } else {
         res.status(twreq.status).send({error: JSON.stringify(response.errors)});
     }
