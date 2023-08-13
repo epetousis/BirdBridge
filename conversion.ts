@@ -308,7 +308,7 @@ function convertTweetSource(source: string): Record<string, string> | null {
     }
 }
 
-export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, extraMetadata?: { limitedReplies?: boolean, quoteTweetDeleted?: boolean }): Record<string, any> {
+export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, extraMetadata?: { limitedReplies?: boolean, quoteTweetDeleted?: boolean, conversationMuted?: boolean }): Record<string, any> {
     const toot: Record<string, any> = {};
 
     if (tweet.user === undefined && globalObjects?.users)
@@ -415,6 +415,7 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, ext
     toot.favourited = tweet.favorited;
     toot.reblogged = tweet.retweeted;
     toot.bookmarked = tweet.bookmarked;
+    toot.muted = extraMetadata?.conversationMuted ?? false;
 
     if (tweet.card) {
         const conv = convertCard(tweet.card, tweet.entities);
@@ -490,7 +491,7 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
         tweet.retweeted_status.user = retweetResult.core.user_result.result.legacy;
         tweet.retweeted_status.id_str = retweetResult.rest_id;
     }
-    return tweetToToot(tweet, undefined, { limitedReplies: limitedRepliesTweet, quoteTweetDeleted });
+    return tweetToToot(tweet, undefined, { limitedReplies: limitedRepliesTweet, quoteTweetDeleted, conversationMuted: tweetResult.conversation_muted });
 }
 
 export function graphQLUserToAccount(userResult: Record<string, any>) {
