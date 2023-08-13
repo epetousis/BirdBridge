@@ -997,8 +997,4 @@ app.post('/api/v1/polls/:id(\\d+)/votes', async (req, res) => {
     res.status(500).send({error: 'Polls are not yet supported. Please vote in the Twitter app.'});
 });
 
-app.get('/missing.png', async (req, res) => {
-    res.status(200).send('');
-});
-
 app.listen(8000);

@@ -139,8 +139,8 @@ export function userToAccount(user: Record<string, any>): Record<string, any> | 
     account.avatar_static = account.avatar;
     // TODO make this point to something useful
     // Pinafore just expects to see missing.png
-    account.header = user.profile_banner_url || `${CONFIG.root}/missing.png`;
-    account.header_static = user.profile_banner_url || `${CONFIG.root}/missing.png`;
+    account.header = user.profile_banner_url || 'https://abs.twimg.com/images/themes/theme1/bg.png';
+    account.header_static = user.profile_banner_url || 'https://abs.twimg.com/images/themes/theme1/bg.png';
     account.locked = user.protected;
     // fields, bot?
     account.created_at = convertTimestamp(user.created_at);
