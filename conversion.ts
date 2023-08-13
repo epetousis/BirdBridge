@@ -434,7 +434,7 @@ export function graphQLTweetResultToToot(tweetResult: Record<string, any>) {
     if (tweetResult?.note_tweet?.note_tweet_results?.result?.text) {
         // If the tweet has text longer than 120 characters, we need to pull the full text from note_tweet.
         tweet.full_text = tweetResult.note_tweet.note_tweet_results.result.text;
-        tweet.entities = tweetResult.note_tweet.note_tweet_results.result.entity_set.urls;
+        tweet.entities = tweetResult.note_tweet.note_tweet_results.result.entity_set;
     }
     tweet.user = tweetResult.core.user_result.result.legacy;
     // Having weird issues with your client? You might have forgotten to include the tweet ID.
