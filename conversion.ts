@@ -451,6 +451,9 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
         tweet.entities = tweetResult.note_tweet.note_tweet_results.result.entity_set;
     }
     tweet.user = tweetResult.core.user_result.result.legacy;
+    // Everyone is equally "verified" now :/
+    tweet.user.ext_is_blue_verified = tweetResult.core.user_result.result.is_blue_verified && !tweet.user.verified_type;
+    tweet.user.verified = tweetResult.core.user_result.result.is_blue_verified;
     // Having weird issues with your client? You might have forgotten to include the tweet ID.
     tweet.id_str = tweetResult.rest_id;
 
@@ -478,6 +481,10 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
 }
 
 export function graphQLUserToAccount(userResult: Record<string, any>) {
+    const user = userResult.legacy;
+    // Everyone is equally "verified" now :/
+    user.ext_is_blue_verified = userResult.is_blue_verified && !user.verified_type;
+    user.verified = userResult.is_blue_verified;
     return userToAccount(userResult.legacy);
 }
 
