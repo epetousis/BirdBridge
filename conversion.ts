@@ -121,7 +121,7 @@ export function convertFormattedText(text: string, entities: Record<string, any[
     };
 }
 
-export function userToAccount(user: Record<string, any>): Record<string, any> | null {
+export function userToAccount(user: Record<string, any>, extraMetadata?: { isBot?: boolean }): Record<string, any> | null {
     const account: Record<string, any> = {};
     if (!user || !user.id_str) return null;
 
@@ -151,8 +151,12 @@ export function userToAccount(user: Record<string, any>): Record<string, any> | 
     account.following_count = user.friends_count;
     account.emojis = [];
     account.fields = [];
-    // TODO: implement
-    account.bot = false;
+    account.bot = !!extraMetadata?.isBot;
+    account.locked = user.protected;
+    // If muted on Twitter, show as an indefinite mute.
+    if (user.muting) {
+        account.mute_expires_at = null;
+    }
 
     if (user.ext_is_blue_verified) {
         account.emojis.push(BLUE_VERIFIED_EMOJI);
@@ -499,7 +503,10 @@ export function graphQLUserToAccount(userResult: Record<string, any>) {
     // Everyone is equally "verified" now :/
     user.ext_is_blue_verified = userResult.is_blue_verified && !user.verified_type;
     user.verified = userResult.is_blue_verified;
-    return userToAccount(userResult.legacy);
+
+    const isBot = userResult.affiliates_highlighted_label?.label?.userLabelType === 'AutomatedLabel';
+
+    return userToAccount(userResult.legacy, { isBot });
 }
 
 export function timelineInstructionsToToots(instructions: any[], pinned?: boolean): [toots: Record<string, any>[], nextCursor?: string] {
