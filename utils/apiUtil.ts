@@ -1,7 +1,7 @@
 // @deno-types="npm:@types/express@4.17.15"
 import express from "npm:express@4.18.2";
 import { OAuth } from "./oauth.ts";
-import { graphQLTweetResultToToot } from "../conversion.ts";
+import { graphQLTweetResultToToot, graphQLUserToAccount } from "../conversion.ts";
 
 export function buildParams(isTweet: boolean): Record<string, any> {
     const params: Record<string, any> = {
@@ -81,4 +81,39 @@ export async function getTweetAsToot(oauthContext: OAuth, id: string): Promise<R
         return response.errors[0].message;
     }
     return graphQLTweetResultToToot(response.data.tweet_result.result);
+};
+
+/** Get a user from the API. */
+export async function getUserWithID(oauthContext: OAuth, id: string): Promise<Record<string, any> | string | undefined> {
+    const variables = {
+        "include_smart_block": true,
+        "includeTweetImpression": true,
+        "includeTranslatableProfile": true,
+        "includeHasBirdwatchNotes": false,
+        "include_tipjar": true,
+        "include_highlights_info": true,
+        "includeEditPerspective": false,
+        "include_reply_device_follow": true,
+        "includeEditControl": true,
+        "include_verified_phone_status": false,
+        "rest_id": id
+    };
+    const features = {
+        'verified_phone_label_enabled': true,
+    };
+    const twreq = await oauthContext.getGraphQL('/yj7_QJBu7z2-dMmeaQttAA/UserResultByIdQuery', variables, features);
+    const response = await twreq.json();
+    if (response.errors) {
+        return response.errors[0].message;
+    }
+    return response.data.user_result.result;
+}
+
+/** Get a user and convert it to a Mastodon account. */
+export async function getUserWithIDAsAccount(oauthContext: OAuth, id: string): Promise<Record<string, any> | string | undefined> {
+    const response = await getUserWithID(oauthContext, id);
+    if (!response || typeof response === 'string') {
+        return response;
+    }
+    return graphQLUserToAccount(response.data.user_result.result) ?? undefined;
 };

@@ -10,6 +10,7 @@ import {
     buildParams,
     injectPagingInfo,
     getTweetAsToot,
+    getUserWithID,
 } from "./utils/apiUtil.ts";
 import {
     BLUE_VERIFIED_EMOJI,
@@ -450,7 +451,7 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
 });
 
 app.get('/api/v1/accounts/relationships', async (req, res) => {
-    const results = [];
+    const results: Record<string, any> = [];
 
     if (req.body.id) {
         const ids = Array.isArray(req.body.id) ? req.body.id : [req.body.id];
@@ -460,19 +461,23 @@ app.get('/api/v1/accounts/relationships', async (req, res) => {
 
         for (const id of ids) {
             if (typeof id === 'string') {
-                const userCache = getUserCache(req.oauth!);
-                const user = await userCache.fetchUser(id);
+                const user = await getUserWithID(req.oauth!, id);
+                if (!user || typeof user === 'string') {
+                    res.status(500).send({error: user});
+                    return;
+                }
+                // These properties are optional - if they are not set, they won't be returned by Twitter's API
                 results.push({
-                    id: user.id_str,
-                    following: user.following,
-                    showing_reblogs: false, // todo
-                    notifying: user.notifications,
-                    followed_by: user.followed_by,
-                    blocking: false, // todo
-                    blocked_by: false, // todo
-                    muting: false,
+                    id: user.legacy.id,
+                    following: !!user.legacy.following,
+                    showing_reblogs: !!user.legacy.want_retweets,
+                    notifying: !!user.legacy.notifications,
+                    followed_by: !!user.legacy.followed_by,
+                    blocking: !!user.legacy.blocking,
+                    blocked_by: !!user.legacy.blocked_by,
+                    muting: !!user.legacy.muting,
                     muting_notifications: false,
-                    requested: user.follow_request_sent,
+                    requested: !!user.legacy.follow_request_sent,
                     domain_blocking: false,
                     endorsed: false,
                     note: ''
