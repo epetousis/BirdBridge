@@ -424,6 +424,11 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
     if (response.errors) {
         res.status(500).send({error: response.errors});
     }
+    if (!('timeline_response' in response.data.user_result.result)) {
+        // No timeline response returned - possibly due to being blocked.
+        res.send([]);
+        return;
+    }
     let [toots, nextCursor] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, !!req.body.pinned)
       .filter((t) => !(t?.reblog && req.body.exclude_reblogs));
     accountStatusesNextCursors.set(cacheKey, nextCursor);
@@ -637,6 +642,11 @@ app.get('/api/v1/accounts/familiar_followers', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL(`/Mj1OuwJog0E8Wo1JKf0zbg/UserFriendsFollowingTimelineQuery`, params.variables, params.features);
     const response = await twreq.json();
+    if (!('timeline' in response.data.user.timeline_response)) {
+        // No timeline returned - possibly due to being blocked.
+        res.send([]);
+        return;
+    }
     const users = timelineInstructionsToAccounts(response.data.user.timeline_response.timeline.instructions);
     if (twreq.status === 200) {
         res.send(users);
