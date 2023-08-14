@@ -390,6 +390,80 @@ app.get('/api/v1/accounts/:id(\\d+)/featured_tags', async (req, res) => {
     res.send([]);
 });
 
+app.post('/api/v1/accounts/:id(\\d+)/block', async (req, res) => {
+    const params = {
+        user_id: req.params.id,
+    }
+
+    const twreq = await req.oauth!.post('https://api.twitter.com/1.1/blocks/create.json', params);
+    const account = await twreq.json();
+    if (twreq.status === 200) {
+        res.send({
+            "id": req.params.id,
+            "following": !!account.following,
+            "showing_reblogs": false,
+            "notifying": !!account.notifications,
+            "followed_by": !!account.followed_by,
+            "blocking": true,
+            "blocked_by": !!account.blocked_by,
+            "muting": !!account.muting,
+            "muting_notifications": false,
+            "requested": !!account.follow_request_sent,
+            "domain_blocking": false,
+            "endorsed": false
+        });
+    } else {
+        res.status(twreq.status).send({ error: 'Something went wrong.' });
+    }
+});
+
+app.post('/api/v1/accounts/:id(\\d+)/unblock', async (req, res) => {
+    const params = {
+        user_id: req.params.id,
+    }
+
+    const twreq = await req.oauth!.post('https://api.twitter.com/1.1/blocks/destroy.json', params);
+    const account = await twreq.json();
+    if (twreq.status === 200) {
+        res.send({
+            "id": req.params.id,
+            "following": !!account.following,
+            "showing_reblogs": false,
+            "notifying": !!account.notifications,
+            "followed_by": !!account.followed_by,
+            "blocking": false,
+            "blocked_by": !!account.blocked_by,
+            "muting": !!account.muting,
+            "muting_notifications": false,
+            "requested": !!account.follow_request_sent,
+            "domain_blocking": false,
+            "endorsed": false
+        });
+    } else {
+        res.status(twreq.status).send({ error: 'Something went wrong.' });
+    }
+});
+
+app.get('/api/v1/blocks', async (req, res) => {
+    const params = {
+        "include_smart_block": false,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "rest_id": req.oauth.myID,
+        "includeTweetVisibilityNudge": true
+    };
+
+    const twreq = await req.oauth!.getGraphQL('/zpVMuUseSzQbrioY8K3cTw/ViewerBlockingTimelineQuery', params);
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send(timelineInstructionsToAccounts(response.data.viewer.timeline_response.timeline.instructions));
+    } else {
+        res.status(twreq.status).send({ error: JSON.stringify(response.errors) });
+    }
+});
+
 // This is kind of stupid but also I don't really see another way of going about it - we cache
 // the next cursor for each account's status requests separately, so that we can paginate them
 // We also make sure to separate them by user, so that we don't reuse the same cursor across
