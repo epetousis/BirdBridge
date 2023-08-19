@@ -460,6 +460,8 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
         // If the tweet has text longer than 120 characters, we need to pull the full text from note_tweet.
         tweet.full_text = tweetResult.note_tweet.note_tweet_results.result.text;
         tweet.entities = tweetResult.note_tweet.note_tweet_results.result.entity_set;
+        // Override the legacy display_text_range, which is only there to put a "show more" link at the end of the tweet text
+        tweet.display_text_range = [0, tweet.full_text.length];
     }
     tweet.user = tweetResult.core.user_result.result.legacy;
     // Everyone is equally "verified" now :/
