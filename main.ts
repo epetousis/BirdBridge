@@ -750,7 +750,13 @@ app.post('/api/v1/accounts/:id(\\d+)/follow', async (req, res) => {
 app.post('/api/v1/accounts/:id(\\d+)/unfollow', async (req, res) => {
     const params = buildParams(true);
     params.user_id = req.params.id;
-    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/friendships/destroy.json`, params);
+    const user = await getUserWithID(req.oauth, req.params.id);
+    let isFollowRequest = false;
+    if (user && typeof user !== 'string') {
+        isFollowRequest = !!user.legacy.follow_request_sent;
+    }
+    const endpointName = isFollowRequest ? 'cancel' : 'destroy';
+    const twreq = await req.oauth!.post(`https://api.twitter.com/1.1/friendships/${endpointName}.json`, params);
     const response = await twreq.json();
     if (twreq.status === 200) {
         res.send({ id: params.user_id, following: false });
