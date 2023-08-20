@@ -499,7 +499,7 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
     if (response.errors) {
         res.status(500).send({error: response.errors});
     }
-    if (!('timeline_response' in response.data.user_result.result)) {
+    if (!response.data.user_result.result?.timeline_response?.timeline?.instructions) {
         // No timeline response returned - possibly due to being blocked.
         res.send([]);
         return;
