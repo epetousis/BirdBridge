@@ -868,7 +868,7 @@ app.get('/api/v2/search', async (req, res) => {
             const twreq = await req.oauth!.getGraphQL(`/2hxSMXGNMNIocZb8pUn9bQ/TweetResultByIdQuery`, variables);
             const response = await twreq.json();
             if (!response.errors) {
-                res.send({accounts: [], hashtags: [], statuses: [graphQLTweetResultToToot(response.data.tweet_result.result)]});
+                res.send({accounts: [], hashtags: [], statuses: [graphQLTweetResultToToot(response.data.tweet_result.result, { alwaysAllowBlue: true })]});
             } else {
                 res.status(twreq.status).send({error: JSON.stringify(response.errors)});
             }

@@ -446,7 +446,13 @@ export function tweetToToot(tweet: Record<string, any>, globalObjects?: any, ext
     return toot;
 }
 
-export function graphQLTweetResultToToot(potentialTweetResult: Record<string, any>) {
+/**
+ * Takes a tweet result from Twitter's GraphQL endpoint and converts it to a Mastodon toot.
+ * @param potentialTweetResult The tweet result data from a GraphQL endpoint to parse.
+ * @param options.alwaysAllowBlue When true, always return Twitter Blue tweets regardless of user settings.
+ * @returns A Mastodon toot, created from the data of the provided tweet result.
+ */
+export function graphQLTweetResultToToot(potentialTweetResult: Record<string, any>, options?: { alwaysAllowBlue?: boolean }) {
     // If we were provided with a result of __typename === TweetWithVisibilityResults, make sure to pull the real result from it.
     const tweetResult = potentialTweetResult?.tweet ?? potentialTweetResult;
     if (!tweetResult || !tweetResult.legacy || !tweetResult.core || !tweetResult.rest_id) return undefined;
@@ -466,7 +472,7 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
     tweet.user = tweetResult.core.user_result.result.legacy;
     // Everyone is equally "verified" now :/
     tweet.user.ext_is_blue_verified = tweetResult.core.user_result.result.is_blue_verified && !tweet.user.verified_type;
-    if (tweet.user.ext_is_blue_verified && !tweet.user.following) return undefined;
+    if (tweet.user.ext_is_blue_verified && !tweet.user.following && !options?.alwaysAllowBlue) return undefined;
     tweet.user.verified = tweetResult.core.user_result.result.is_blue_verified;
     // Having weird issues with your client? You might have forgotten to include the tweet ID.
     tweet.id_str = tweetResult.rest_id;
