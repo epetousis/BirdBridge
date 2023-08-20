@@ -472,7 +472,10 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
     tweet.user = tweetResult.core.user_result.result.legacy;
     // Everyone is equally "verified" now :/
     tweet.user.ext_is_blue_verified = tweetResult.core.user_result.result.is_blue_verified && !tweet.user.verified_type;
-    if (tweet.user.ext_is_blue_verified && !tweet.user.following && !options?.alwaysAllowBlue) return undefined;
+    if (tweet.user.ext_is_blue_verified
+        && !tweet.user.following
+        && !options?.alwaysAllowBlue
+        && CONFIG.block_the_blue) return undefined;
     tweet.user.verified = tweetResult.core.user_result.result.is_blue_verified;
     // Having weird issues with your client? You might have forgotten to include the tweet ID.
     tweet.id_str = tweetResult.rest_id;
