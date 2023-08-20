@@ -504,11 +504,18 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
         res.send([]);
         return;
     }
-    let [toots, nextCursor] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, !!req.body.pinned)
+    let [toots, nextCursor] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, { pinned: !!req.body.pinned, filterConversationsByUser: true })
       .filter((t) => !(t?.reblog && req.body.exclude_reblogs));
     accountStatusesNextCursors.set(cacheKey, nextCursor);
     // Ivory cracks the shits if you return the exact same tweets twice, so make sure to not do that
-    if (req.body.max_id) {
+    if (req.body.max_id && req.body.exclude_replies) {
+        /* TODO: fix max_id filtering
+        Sometimes, a conversation has a "root tweet" that's very old. When returned to client, this very
+        old tweet will be used as the max_id for the next paginated request, which will break our GraphQL cursor-based
+        hack, as we're not yet returning tweets that old!
+        Ideally, we wouldn't return these old tweets at all until we reach that point in the timeline,
+        BUT in the reply endpoint Twitter often only returns those old tweets once! So if we omit them,
+        you will simply never see them again. */
         const maxId = Number.parseInt(req.body.max_id, 10);
         toots = toots?.filter((t) => t.id <= maxId);
     }

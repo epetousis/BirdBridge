@@ -521,8 +521,16 @@ export function graphQLUserToAccount(userResult: Record<string, any>) {
     return userToAccount(userResult.legacy, { isBot });
 }
 
-export function timelineInstructionsToToots(instructions: any[], pinned?: boolean): [toots: Record<string, any>[], nextCursor?: string] {
-    let addEntries = pinned
+/**
+ * Parses GraphQL timeline instructions for tweets and turns them into Mastodon toots.
+ * @param instructions The GraphQL timeline instructions to parse.
+ * @param options.pinned Only return pinned tweets.
+ * @param options.filterConversationsByUser When parsing conversation modules, only parse tweets for the current user.
+ * Useful for parsing instructions from a user profile request, so that one may get replies only from the user we're requesting.
+ * @returns An array of Mastodon toots.
+ */
+export function timelineInstructionsToToots(instructions: any[], options?: { pinned?: boolean, filterConversationsByUser?: boolean }): [toots: Record<string, any>[], nextCursor?: string] {
+    let addEntries = options?.pinned
         ? [instructions
             ?.find((i) => i['__typename'] === 'TimelinePinEntry')
             ?.entry]
@@ -550,8 +558,18 @@ export function timelineInstructionsToToots(instructions: any[], pinned?: boolea
               && e.content.moduleDisplayType === 'VerticalConversation'
               && e.content.items;
             if (isConversationModule) {
-                // If this is a conversation "module", let's get the last reply as that is considered the focal or "main" tweet.
-                return graphQLTweetResultToToot(e.content.items[e.content.items.length - 1]?.item.content?.tweetResult?.result);
+                /* NB: parsing conversation modules is a work in progress. They don't really fit
+                in well with Mastodon's idea of timelines and it's not always clear what tweets should be returned. */
+                // The "focal tweet" is the last tweet in these converation modules.
+                // Make sure not to grab the cursor! Not a whole lot we can do with them until Mastodon adds "show more" buttons.
+                const focalTweetResult = e.content.items
+                  ?.findLast((i) => i.item.content.__typename === 'TimelineTweet')
+                  ?.item.content?.tweetResult?.result;
+                const relevantUser = focalTweetResult?.core?.user_result?.result?.legacy;
+                // If required (e.g when viewing a user profile), we filter all tweets in the conversation by the focal tweet's user ID.
+                return e.content.items
+                  .filter((item) => item.item.content?.tweetResult?.result?.core?.user_result?.result?.legacy?.id_str === relevantUser?.id_str || !options?.filterConversationsByUser)
+                  .map((item) => graphQLTweetResultToToot(item.item.content?.tweetResult?.result));
             }
             return graphQLTweetResultToToot(e.content.content?.tweetResult?.result);
         })
