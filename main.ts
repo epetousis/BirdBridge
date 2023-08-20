@@ -121,7 +121,14 @@ setupAuthflow(app);
 
 app.get('/api/v1/accounts/verify_credentials', async (req, res) => {
     const twreq = await req.oauth!.request('GET', 'https://api.twitter.com/1.1/account/verify_credentials.json');
-    const user = await twreq.json();
+    const response = await twreq.json();
+
+    if (twreq.status !== 200 || response.errors) {
+        res.status(401).send({ error: 'The access token is invalid' });
+        return;
+    }
+
+    const user = response;
 
     const account = userToAccount(user);
     account.source = {
