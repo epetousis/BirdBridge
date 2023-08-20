@@ -507,6 +507,10 @@ export function graphQLTweetResultToToot(potentialTweetResult: Record<string, an
         tweet.retweeted_status.user = retweetResult.core.user_result.result.legacy;
         tweet.retweeted_status.id_str = retweetResult.rest_id;
     }
+    if (tweetResult.tweet_card?.legacy) {
+        tweet.card = tweetResult.tweet_card?.legacy;
+        tweet.card.binding_values = Object.fromEntries(tweet.card.binding_values.map(({ key, value }) => [key, value]));
+    }
     return tweetToToot(tweet, undefined, { limitedReplies: limitedRepliesTweet, quoteTweetDeleted, conversationMuted: tweetResult.conversation_muted });
 }
 
