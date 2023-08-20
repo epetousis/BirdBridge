@@ -368,6 +368,46 @@ app.get('/api/v1/lists', async (req, res) => {
     res.send(lists);
 });
 
+app.post('/api/v1/lists', async (req, res) => {
+    const variables = {
+        // Mastodon doesn't have a concept of public lists, so always make private lists
+        "is_private": true,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "description": "",
+        "list_name": req.body.title,
+    };
+
+    const twreq = await req.oauth!.postGraphQL('/qbFpAnCA8pnKkFmb8_soxA/ListCreate', variables);
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send({ id: response.data.list.listId, title: response.data.list.name, replies_policy: 'none' });
+    } else {
+        res.status(twreq.status).send({ error: JSON.stringify(response.errors) });
+    }
+});
+
+app.delete('/api/v1/lists/:list_id(\\d+)', async (req, res) => {
+    const variables = {
+        "include_smart_block": false,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "list_id": req.params.list_id,
+    };
+
+    const twreq = await req.oauth!.postGraphQL('/GaNPVF9EcFNrK01zcocfjQ/ListDelete', variables);
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send({});
+    } else {
+        res.status(twreq.status).send({ error: JSON.stringify(response.errors) });
+    }
+});
+
 app.get('/api/v1/lists/:list_id(\\d+)/accounts', async (req, res) => {
     const variables = {
         "include_smart_block": false,
