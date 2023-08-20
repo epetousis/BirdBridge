@@ -527,9 +527,11 @@ export function graphQLUserToAccount(userResult: Record<string, any>) {
  * @param options.pinned Only return pinned tweets.
  * @param options.filterConversationsByUser When parsing conversation modules, only parse tweets for the current user.
  * Useful for parsing instructions from a user profile request, so that one may get replies only from the user we're requesting.
+ * @param options.alwaysAllowBlue Always return Twitter Blue tweets regardless of user settings.
+ * @param options.alwaysAllowFirstBlue Always return the first Twitter Blue tweet regardless of user settings.
  * @returns An array of Mastodon toots.
  */
-export function timelineInstructionsToToots(instructions: any[], options?: { pinned?: boolean, filterConversationsByUser?: boolean }): [toots: Record<string, any>[], nextCursor?: string] {
+export function timelineInstructionsToToots(instructions: any[], options?: { pinned?: boolean, filterConversationsByUser?: boolean, alwaysAllowBlue?: boolean, alwaysAllowFirstBlue?: boolean }): [toots: Record<string, any>[], nextCursor?: string] {
     let addEntries = options?.pinned
         ? [instructions
             ?.find((i) => i['__typename'] === 'TimelinePinEntry')
@@ -553,7 +555,7 @@ export function timelineInstructionsToToots(instructions: any[], options?: { pin
     return [addEntries
         // Make sure to filter out anything from the "related tweets" widget
         .filter((e) => e.content.clientEventInfo?.component !== 'related_tweet')
-        .flatMap((e) => {
+        .flatMap((e, index) => {
             const isConversationModule = e.content.__typename === 'TimelineTimelineModule'
               && e.content.moduleDisplayType === 'VerticalConversation'
               && e.content.items;
@@ -571,7 +573,7 @@ export function timelineInstructionsToToots(instructions: any[], options?: { pin
                   .filter((item) => item.item.content?.tweetResult?.result?.core?.user_result?.result?.legacy?.id_str === relevantUser?.id_str || !options?.filterConversationsByUser)
                   .map((item) => graphQLTweetResultToToot(item.item.content?.tweetResult?.result));
             }
-            return graphQLTweetResultToToot(e.content.content?.tweetResult?.result);
+            return graphQLTweetResultToToot(e.content.content?.tweetResult?.result, { alwaysAllowBlue: options?.alwaysAllowBlue || (options?.alwaysAllowFirstBlue && index === 0) });
         })
         .filter((t): t is Record<string, any> => !!t), nextCursor];
 };

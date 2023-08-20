@@ -325,7 +325,7 @@ app.get('/api/v1/favourites', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/xUGO-xGK_bD7TWpW2des6Q/FavoritesByTimeTimelineV2', variables, features);
     const response = await twreq.json();
-    const [toots] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions);
+    const [toots] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, { alwaysAllowBlue: true });
     res.send(toots);
 });
 
@@ -344,7 +344,7 @@ app.get('/api/v1/bookmarks', async (req, res) => {
     };
     const twreq = await req.oauth!.getGraphQL('/E-Rqts_gtMp60KgQK2Xv9A/BookmarkTimelineV2', variables, features);
     const response = await twreq.json();
-    const [toots] = timelineInstructionsToToots(response.data.timeline_response.timeline.instructions);
+    const [toots] = timelineInstructionsToToots(response.data.timeline_response.timeline.instructions, { alwaysAllowBlue: true });
     res.send(toots);
 });
 
@@ -504,7 +504,7 @@ app.get('/api/v1/accounts/:id(\\d+)/statuses', async (req, res) => {
         res.send([]);
         return;
     }
-    let [toots, nextCursor] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, { pinned: !!req.body.pinned, filterConversationsByUser: true })
+    let [toots, nextCursor] = timelineInstructionsToToots(response.data.user_result.result.timeline_response.timeline.instructions, { pinned: !!req.body.pinned, filterConversationsByUser: true, alwaysAllowBlue: true })
       .filter((t) => !(t?.reblog && req.body.exclude_reblogs));
     accountStatusesNextCursors.set(cacheKey, nextCursor);
     // Ivory cracks the shits if you return the exact same tweets twice, so make sure to not do that
@@ -799,7 +799,7 @@ app.get('/api/v1/statuses/:id(\\d+)/context', async (req, res) => {
     const ancestors: Record<string, any> = [];
     const descendants: Record<string, any> = [];
 
-    let [requestedStatuses, nextCursor] = timelineInstructionsToToots(response.data.timeline_response.instructions);
+    let [requestedStatuses, nextCursor] = timelineInstructionsToToots(response.data.timeline_response.instructions, { alwaysAllowFirstBlue: true });
     const requestedStatus = requestedStatuses.find((t) => t.id === req.params.id);
 
     // Fetch additional pages of context
