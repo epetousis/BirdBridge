@@ -368,6 +368,73 @@ app.get('/api/v1/lists', async (req, res) => {
     res.send(lists);
 });
 
+app.get('/api/v1/lists/:list_id(\\d+)/accounts', async (req, res) => {
+    const variables = {
+        "include_smart_block": false,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "rest_id": req.params.list_id,
+        "includeTweetVisibilityNudge": true,
+        "count": Math.min(req.body.limit, 100)
+    };
+
+    const features = {
+        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": true,
+    };
+
+    const twreq = await req.oauth!.getGraphQL('/ffmEWhNv5KYjcHjOD1Xebw/ListMembersTimelineQuery', variables, features);
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send(timelineInstructionsToAccounts(response.data.list.timeline_response.timeline.instructions));
+    } else {
+        res.status(twreq.status).send({ error: JSON.stringify(response.errors) });
+    }
+});
+
+app.post('/api/v1/lists/:list_id(\\d+)/accounts', async (req, res) => {
+    const variables = {
+        "include_smart_block": false,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "list_id": req.params.list_id,
+        // TODO: support multiple account IDs
+        "user_id": req.body.account_ids[0]
+    };
+
+    const twreq = await req.oauth!.postGraphQL('/n8cJiyWlfLfSY6yRuG06VA/ListMemberAdd', variables);
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send({});
+    } else {
+        res.status(twreq.status).send({ error: JSON.stringify(response.errors) });
+    }
+});
+
+app.delete('/api/v1/lists/:list_id(\\d+)/accounts', async (req, res) => {
+    const variables = {
+        "include_smart_block": false,
+        "includeTweetImpression": true,
+        "includeHasBirdwatchNotes": false,
+        "includeEditPerspective": false,
+        "includeEditControl": true,
+        "list_id": req.params.list_id,
+        // TODO: support multiple account IDs
+        "user_id": req.body.account_ids[0]
+    };
+
+    const twreq = await req.oauth!.postGraphQL('/HLs3htQr8YRGRNe35kgs9Q/ListMemberRemove', variables);
+    const response = await twreq.json();
+    if (twreq.status === 200 && !response.errors) {
+        res.send({});
+    } else {
+        res.status(twreq.status).send({ error: JSON.stringify(response.errors) });
+    }
+});
+
 app.get('/api/v1/timelines/list/:list_id(\\d+)', async (req, res) => {
     const params: Record<string, any> = buildParams(true);
     params.list_id = req.params.list_id;
