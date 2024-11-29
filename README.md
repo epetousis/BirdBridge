@@ -1,5 +1,8 @@
 # BirdBridge
 
+> [!NOTE]
+> This project is unmaintained, as I no longer use Twitter.
+
 A tiny server written using Deno and Express which allows Mastodon clients to access Twitter.
 
 This app doesn't store any data, it just acts as a proxy that rewrites requests in cool ways.
